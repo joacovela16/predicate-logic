@@ -8,33 +8,36 @@ package jvc.predicate.grammar.def;
 /** CUP generated interface containing symbol constants. */
 public interface sym {
   /* terminals */
-  public static final int PLUS_OP = 11;
-  public static final int GT_OP = 15;
+  public static final int PLUS_OP = 12;
+  public static final int SETNAME = 8;
+  public static final int GT_OP = 16;
   public static final int FLOAT_NUMBER = 3;
-  public static final int AND = 8;
-  public static final int PUNTO = 21;
+  public static final int AND = 9;
+  public static final int PUNTO = 23;
   public static final int FORALL = 6;
-  public static final int OR = 9;
-  public static final int LT_OP = 14;
-  public static final int MINUS_OP = 12;
-  public static final int NOT = 10;
-  public static final int IDENTIFIER = 20;
+  public static final int OR = 10;
+  public static final int LT_OP = 15;
+  public static final int MINUS_OP = 13;
+  public static final int NOT = 11;
+  public static final int IDENTIFIER = 21;
   public static final int INT_NUMBER = 2;
-  public static final int AP_CURVO = 23;
-  public static final int C_LLAVES = 26;
-  public static final int DOS_PUNTOS = 22;
+  public static final int AP_CURVO = 25;
+  public static final int C_LLAVES = 28;
+  public static final int RELATION = 22;
+  public static final int DOS_PUNTOS = 24;
   public static final int BOOLEAN = 4;
+  public static final int COMA = 29;
   public static final int STRING = 5;
   public static final int EOF = 0;
-  public static final int EQUAL_OP = 18;
+  public static final int EQUAL_OP = 19;
   public static final int error = 1;
   public static final int EXISTS = 7;
-  public static final int NOT_EQUAL_OP = 19;
-  public static final int GE_OP = 17;
-  public static final int A_LLAVES = 25;
-  public static final int CP_CURVO = 24;
-  public static final int TIME_OP = 13;
-  public static final int LE_OP = 16;
+  public static final int NOT_EQUAL_OP = 20;
+  public static final int GE_OP = 18;
+  public static final int A_LLAVES = 27;
+  public static final int CP_CURVO = 26;
+  public static final int LE_OP = 17;
+  public static final int TIME_OP = 14;
   public static final String[] terminalNames = new String[] {
   "EOF",
   "error",
@@ -44,6 +47,7 @@ public interface sym {
   "STRING",
   "FORALL",
   "EXISTS",
+  "SETNAME",
   "AND",
   "OR",
   "NOT",
@@ -57,12 +61,14 @@ public interface sym {
   "EQUAL_OP",
   "NOT_EQUAL_OP",
   "IDENTIFIER",
+  "RELATION",
   "PUNTO",
   "DOS_PUNTOS",
   "AP_CURVO",
   "CP_CURVO",
   "A_LLAVES",
-  "C_LLAVES"
+  "C_LLAVES",
+  "COMA"
   };
 }
 

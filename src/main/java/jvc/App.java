@@ -11,15 +11,13 @@ import java.io.StringReader;
  */
 public class App {
 
-    public static final String SOURCE = "(not true and (true or (not false)))";//"true and not(  1 == 0 )";
+    static final String SOURCE = "exists a:A { not forall b:B{b==0} and true }";
 
     public static void main(String[] args) {
         try {
             ComplexSymbolFactory symbolFactory = new ComplexSymbolFactory();
 
-            String src = SOURCE;
-
-            AnalizadorLexico analizadorLexico = new AnalizadorLexico(new StringReader(src), symbolFactory);
+            AnalizadorLexico analizadorLexico = new AnalizadorLexico(new StringReader(SOURCE), symbolFactory);
 
             parser p = new parser(analizadorLexico, symbolFactory);
 

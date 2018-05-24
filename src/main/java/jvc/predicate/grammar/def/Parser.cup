@@ -13,26 +13,26 @@ parser code
 
 :}
 
-non terminal expr, expr_rec, test, logical_bin, logical_bin_rec, logical_bin_opt, not_op, atomic, epsilon ;
+non terminal simple_stmt, logical_bin, logical_bin_rec, logical_bin_opt, not_op, atomic, epsilon ;
+non terminal comparator, comparator_rec, comparator_op;
+non terminal arithmetic, arithmetic_op, arithmetic_rec;
+non terminal compressed_set_name, compressed_set_name_rec;
+non terminal comp_stmt, comp_stmt_rec, comp_stmt_op,  forall_stmt, exists_stmt, stmt, compressed_ids, compressed_ids_rec;
 
 terminal PLType INT_NUMBER;
 terminal PLType FLOAT_NUMBER;
 terminal PLType BOOLEAN;
 terminal PLType STRING;
 
-terminal FORALL, EXISTS;
+terminal FORALL, EXISTS, SETNAME;
 terminal AND, OR, NOT, PLUS_OP, MINUS_OP, TIME_OP;
 terminal LT_OP, GT_OP, LE_OP, GE_OP, EQUAL_OP, NOT_EQUAL_OP;
-terminal IDENTIFIER;
-terminal PUNTO, DOS_PUNTOS, AP_CURVO, CP_CURVO, A_LLAVES, C_LLAVES;
+terminal IDENTIFIER, RELATION;
+terminal PUNTO, DOS_PUNTOS, AP_CURVO, CP_CURVO, A_LLAVES, C_LLAVES, COMA;
 
-start with expr;
+start with stmt;
 
-expr ::=  test expr_rec;
-
-expr_rec ::= epsilon | test expr_rec;
-
-test ::= logical_bin ;
+stmt ::= logical_bin ;
 
 logical_bin ::=
 
@@ -49,12 +49,60 @@ logical_bin_rec ::=
 
 logical_bin_opt ::= AND | OR;
 
-not_op ::= atomic | NOT not_op;
+not_op ::=
+    comp_stmt  |
+    NOT not_op |
+    NOT AP_CURVO logical_bin CP_CURVO;
+
+// ============================================================ //
+
+comp_stmt ::= comparator | forall_stmt | exists_stmt ;
+
+forall_stmt ::= FORALL compressed_ids DOS_PUNTOS compressed_set_name A_LLAVES logical_bin C_LLAVES;
+
+exists_stmt ::= EXISTS compressed_ids DOS_PUNTOS compressed_set_name A_LLAVES logical_bin C_LLAVES ;
+
+// ============================================================ //
+
+comparator ::= arithmetic comparator_rec;
+
+comparator_rec ::=
+    epsilon |
+    comparator_op arithmetic comparator_rec;
+
+comparator_op ::=
+    LE_OP |
+    LT_OP |
+    EQUAL_OP |
+    NOT_EQUAL_OP |
+    GE_OP |
+    GT_OP;
+
+
+arithmetic ::= atomic arithmetic_rec;
+
+arithmetic_rec ::=
+
+    epsilon |
+    arithmetic_op atomic arithmetic_rec;
+
+arithmetic_op ::= PLUS_OP | MINUS_OP | TIME_OP;
 
 atomic ::=
-      INT_NUMBER:c
-    | FLOAT_NUMBER:c
-    | BOOLEAN:c
-    | STRING:c;
+    IDENTIFIER AP_CURVO compressed_ids CP_CURVO | // funcion
+    RELATION | // posible variable
+    RELATION AP_CURVO compressed_ids CP_CURVO | // relacion
+    IDENTIFIER |
+    INT_NUMBER:c |
+    FLOAT_NUMBER:c |
+    BOOLEAN:c |
+    STRING:c;
+
+
+compressed_ids ::= IDENTIFIER compressed_ids_rec;
+compressed_ids_rec ::= epsilon | COMA IDENTIFIER compressed_ids_rec;
+
+compressed_set_name ::= SETNAME compressed_set_name_rec;
+compressed_set_name_rec ::= epsilon | COMA SETNAME compressed_set_name_rec;
 
 epsilon ::= {: RESULT=null; :};

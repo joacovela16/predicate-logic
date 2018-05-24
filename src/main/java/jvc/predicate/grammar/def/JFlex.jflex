@@ -53,9 +53,10 @@ _Float= {_Int}{_Fraccion}
 _Mayusculas= [A-Z]
 _Minusculas=[a-z]
 _Letra =  ({_Minusculas} | {_Mayusculas} )
-_Identifier = {_Letra}({_Letra}|{_Digito}|_)*
+_Relation = {_Mayusculas}({_Mayusculas})*
+_Identifier = {_Minusculas}({_Minusculas}|{_Digito})*
 _ComillaSimple=  \"([^\\\"]|\\.)*\"
-
+_SetName = ({_Mayusculas}+{_Minusculas}*)+
 _Espacio_en_Blanco = \s
 
 
@@ -65,9 +66,8 @@ _Espacio_en_Blanco = \s
 // PALABRAS RESERVADAS
 <YYINITIAL> {  
                 ("true" | "false") { return symbol(yytext(), sym.BOOLEAN, new PLBoolean(yytext())); }
-                "in"        {}
-                "forall"    {}
-                "exists"    {}
+                "forall"    { return symbol("forall", sym.FORALL, null); }
+                "exists"    { return symbol("exists", sym.EXISTS, null); }
 }
 
 // OPERADORES BOOLEANOS
@@ -79,7 +79,9 @@ _Espacio_en_Blanco = \s
 
 <YYINITIAL> {
                 "\n" {}
-                { _Identifier} {}
+                {_SetName} { return symbol( String.format("set(%s)", yytext()) , sym.SETNAME, yytext()); }
+                { _Relation} { return symbol(yytext(), sym.RELATION, yytext()); }
+                { _Identifier} { return symbol(yytext(), sym.IDENTIFIER, yytext()); }
                 {_ComillaSimple} { return symbol("int", sym.STRING, new PLString(yytext())); }
                 { _Int} { return symbol("int", sym.INT_NUMBER, new PLInt(Integer.valueOf(yytext()))); }
                 {_Float} {return symbol("float", sym.FLOAT_NUMBER, new PLFloat(Float.valueOf(yytext())));}
@@ -94,6 +96,7 @@ _Espacio_en_Blanco = \s
                 "}"     { return symbol("}", sym.C_LLAVES, null); }
                 ":"     { return symbol(":", sym.DOS_PUNTOS, null); }
                 "."     { return symbol(".", sym.PUNTO, null); }
+                ","     { return symbol(",", sym.COMA, null); }
 }
 
 // OPERADORES ARITMETICOS
