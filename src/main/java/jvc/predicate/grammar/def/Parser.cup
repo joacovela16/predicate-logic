@@ -78,7 +78,6 @@ comparator_op ::=
     GE_OP |
     GT_OP;
 
-
 arithmetic ::= atomic arithmetic_rec;
 
 arithmetic_rec ::=
