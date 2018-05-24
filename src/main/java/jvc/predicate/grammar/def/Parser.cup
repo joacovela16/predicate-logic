@@ -1,0 +1,60 @@
+package jvc.predicate.grammar.def;
+import java_cup.runtime.*;
+import jvc.predicate.engine.evaluator.impl.arithmetic.*;
+import jvc.predicate.engine.evaluator.impl.comparation.*;
+import jvc.predicate.engine.evaluator.impl.logic.*;
+import jvc.predicate.engine.evaluator.impl.runtime.*;
+import jvc.predicate.engine.evaluator.*;
+import jvc.predicate.engine.types.*;
+import jvc.predicate.engine.types.impl.*;
+
+parser code
+{:
+
+:}
+
+non terminal expr, expr_rec, test, logical_bin, logical_bin_rec, logical_bin_opt, not_op, atomic, epsilon ;
+
+terminal PLType INT_NUMBER;
+terminal PLType FLOAT_NUMBER;
+terminal PLType BOOLEAN;
+terminal PLType STRING;
+
+terminal FORALL, EXISTS;
+terminal AND, OR, NOT, PLUS_OP, MINUS_OP, TIME_OP;
+terminal LT_OP, GT_OP, LE_OP, GE_OP, EQUAL_OP, NOT_EQUAL_OP;
+terminal IDENTIFIER;
+terminal PUNTO, DOS_PUNTOS, AP_CURVO, CP_CURVO, A_LLAVES, C_LLAVES;
+
+start with expr;
+
+expr ::=  test expr_rec;
+
+expr_rec ::= epsilon | test expr_rec;
+
+test ::= logical_bin ;
+
+logical_bin ::=
+
+    not_op logical_bin_rec |
+
+    AP_CURVO logical_bin CP_CURVO logical_bin_rec ;
+
+logical_bin_rec ::=
+
+    epsilon |
+    logical_bin_opt not_op logical_bin_rec |
+    logical_bin_opt AP_CURVO not_op logical_bin_rec CP_CURVO
+    ;
+
+logical_bin_opt ::= AND | OR;
+
+not_op ::= atomic | NOT not_op;
+
+atomic ::=
+      INT_NUMBER:c
+    | FLOAT_NUMBER:c
+    | BOOLEAN:c
+    | STRING:c;
+
+epsilon ::= {: RESULT=null; :};

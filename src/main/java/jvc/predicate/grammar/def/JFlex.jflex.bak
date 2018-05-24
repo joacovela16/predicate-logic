@@ -1,0 +1,378 @@
+/* <java imports>  */
+package flex_cup;
+import java_cup.runtime.*;
+import java.util.*;
+import src.Tipos.*;
+import src.ParserUtils.*;
+import src.Simbolos.ErrorType;
+import src.Simbolos.Tabla_de_Simbolos;
+
+%%
+/* <jflex options>  */
+%class AnalizadorLexico
+%line
+%column
+%cup
+%char
+%standalone
+%public
+
+%init{
+%init}
+ 
+%eofval{
+
+    return finish( new Symbol(sym.EOF));
+
+%eofval}
+
+%{
+/*----------------CONSTRUCTORES------------------------------- */
+
+private StateStore Store;
+private ParserFunctions parserFunction;
+private int blockControl = 0;
+private ErrorManager errorManager = ErrorManager.getInstance();
+private boolean reset = true;
+
+private Symbol symbol(int type, Object value) { 
+    charControl(false);
+    return  new Symbol(type, yyline, yycolumn, value);
+}
+
+public void setContext(StateStore ss, ParserFunctions pf){
+    Store =  ss;
+    parserFunction = pf;
+}
+
+private Symbol symbol(int type) {
+    charControl(false);
+    
+    return  new Symbol(type, yyline, yycolumn);
+}
+private Symbol symbol(int type, int a) {
+    charControl(false);
+    return  new Symbol(type, yyline, yycolumn);
+}
+
+/*----------------AUXILIARES--------------------------------- */
+
+private void charControl(boolean isNewline){
+    
+    if (!Store.sendingPending && !isNewline){
+        
+        Store.caracterPerLine +=  yytext().length();
+        
+    }
+}
+
+private Symbol sendPending(Symbol toSend){   
+    Symbol toReturn = toSend;
+    if (Store.pendingSymbols.size() > 0){
+            
+            Store.sendingPending = true;
+            toReturn = Store.pendingSymbols.get(0);
+            Store.pendingSymbols.remove(0);
+            if (Store.pendingSymbols.size()>0){
+                yypushback(yylength());
+                reset = false;
+                Store.caracterPerLine-= yylength();
+                Store.stringPerLine.pop();
+            }
+    }else{
+        Store.sendingPending = false;
+    }  
+    
+    //System.out.print( sym.terminalNames[toReturn.sym] + " ");
+    return toReturn;
+}
+
+private void warningIndent(){
+    Store.blockComing = true;
+    Store.auxLine = yyline;
+}
+
+private Symbol startBlock(Symbol s){
+    Symbol toReturn = s;
+    if ( Store.blockComing && !Store.sendingPending){
+
+        if (Store.tabsPerLine == Store.maxBlockSize + 1){
+            
+            Store.blockComing = false;
+            Store.maxBlockSize++;
+            Store.sendingPending = true;
+            toReturn =  new Symbol(sym.INDENTACION);
+            blockControl++;
+            Store.pendingSymbols.add(toReturn);
+            Store.pendingSymbols.add(s);
+        }
+
+    }else if ( Store.tabsPerLine < Store.maxBlockSize ){
+            
+        int desPending = Store.maxBlockSize - Store.tabsPerLine;
+        Store.maxBlockSize = Store.tabsPerLine;
+        
+        for(int i=0; i<desPending;i++){
+            blockControl--;
+            Store.pendingSymbols.add( new Symbol(sym.DISDENTACION, yyline, yycolumn) );
+        }
+        Store.pendingSymbols.add(s);
+        
+        Symbol temp = Store.pendingSymbols.get(0);
+        toReturn = temp;
+        
+    }
+    
+    return toReturn;
+}
+
+private Symbol finish( Symbol toSend ){
+    Symbol toReturn = toSend;
+    
+    if (blockControl > 0){
+        for(int i = 0; i< blockControl; i++){
+            Store.pendingSymbols.add( new Symbol(sym.DISDENTACION, yyline, yycolumn) );
+        }
+        
+        blockControl = 0;
+        Store.pendingSymbols.add(toSend);
+    }
+
+    if ( Store.pendingSymbols.size() > 0 ){
+        toReturn = Store.pendingSymbols.get(0);
+        Store.pendingSymbols.remove(0);
+        
+        if (Store.pendingSymbols.size() > 0){
+            reset = false;
+            yypushback(yylength());
+        }
+    }
+    return toReturn;
+}
+
+
+private void updateTabNumber()throws RuntimeException{
+    if (!Store.sendingPending){
+        if (Store.caracterPerLine == 0){
+            Store.tabsPerLine+= yylength();
+            Store.tabsPending+= yytext();
+            parserFunction.increaseColumnCounter(yylength());
+        }
+        if (Store.tabsPerLine > Store.maxBlockSize + 1){
+            // REPORTAR ERROR DE INDENTACION
+            errorManager.generateError("IndentationError: unexpected indent", ErrorType.LEXICO);
+        }
+    }
+}
+
+private void pb(boolean isNewLine){
+    String yt = yytext();
+    
+    if (!isNewLine){
+        parserFunction.addSampleSource(yt);
+        parserFunction.increaseColumnCounter(yylength());
+        Store.stringPerLine.push( yt );
+    }else{
+        String line = "";
+        
+        int i=0,
+            size = Store.stringPerLine.size();
+        for(i = 0; i< size; i++){
+            line += Store.stringPerLine.get(i);
+        }
+        if (Store.caracterPerLine > 0){
+            line = Store.tabsPending + line;
+        }
+        
+        line+= "\n";
+        Store.tabsPending = "";
+        parserFunction.addSource(line);
+        Store.stringPerLine.clear(); 
+        if (reset){
+            parserFunction.resetColumnCounter();
+        }else{
+            reset = true;
+        }
+    }
+}
+private void pb(boolean isNewLine, String content){
+    String yt = content;
+    if (!isNewLine){
+        Store.stringPerLine.push( yt );
+    }else{
+        String line = "";
+        
+        int i=0,
+            size = Store.stringPerLine.size();
+        for(i = 0; i< size; i++){
+            line += Store.stringPerLine.get(i);
+        }
+        if (Store.caracterPerLine > 0){
+            line = Store.tabsPending + line;
+        }
+        if (Store.caracterPerLine > 0){
+           //line+= "\n";
+        }
+        Store.tabsPending = "";
+        parserFunction.addSource(line);
+        Store.stringPerLine.clear();     
+    }
+}
+
+private void print(String s){
+    System.out.print(s + " ");
+}
+
+%}
+
+
+ /*< regular expessions macros >  */
+
+_Digito = [0-9]
+_NoCeroDigito = [1-9]
+_Int= ({_NoCeroDigito}{_Digito}* | "0")
+_Long= {_Int}"L" 
+
+ _Fraccion=  "."{_Digito}+
+_Float= {_Int}{_Fraccion}
+
+_Mayusculas= [A-Z]
+_Minusculas=[a-z]
+_Letra =  ({_Minusculas} |{_Mayusculas} )
+_Identifier = {_Letra}({_Letra}|{_Digito}|_)*
+
+_ComillaSimple=  \"([^\\\"]|\\.)*\" | '([^\\\"']|\\.)*'
+_ComillaTriple= (''' {_StringTriple}* ''' ) | (\"\"\" {_StringTriple}* \"\"\" ) 
+
+_StringTriple=  {_CharTriple} | {_Escape}
+
+_CharTriple = [^\\\s?]
+_Escape     = [^\(S?)]  /* [^\(\S?)]*/ 
+
+_Espacio_en_Blanco = \s
+
+_Tabulacion = \t+
+
+_Comentario =  "#"[\s|"*"|"\t"|a-zA-Z|0-9]+\r\n
+
+
+%state TAB
+%%
+/*< lexical actions >*/
+
+/* PALABRAS RESERVADAS  */
+<YYINITIAL> {  
+                "True"      {pb(false);return sendPending(symbol(sym.NUMERO,new P_Int(1, true)));}
+                "False"     {pb(false);return sendPending(symbol(sym.NUMERO,new P_Int(0, true)));}
+                "in"        {pb(false);return sendPending(startBlock(symbol(sym.IN)));}
+                "if"        {pb(false);return sendPending(startBlock(symbol(sym.IF)));}
+                "else"      {pb(false);return sendPending(startBlock(symbol(sym.ELSE)));}
+                "elif"      {pb(false);return sendPending(startBlock(symbol(sym.ELIF)));}
+                "while"     {pb(false);return sendPending(startBlock(symbol(sym.WHILE)));} 
+                "for"       {pb(false);return sendPending(startBlock(symbol(sym.FOR)));} 
+                "def"       {pb(false);return sendPending(startBlock(symbol(sym.DEF)));} 
+                "print"     {pb(false);return sendPending(startBlock(symbol(sym.PRINT))); } 
+                "return"    {pb(false);return sendPending(startBlock(symbol(sym.RETURN)));} 
+                "break"     {pb(false);return sendPending(startBlock(symbol(sym.BREAK)));} 
+                "continue"  {pb(false);return sendPending(startBlock(symbol(sym.CONTINUE)));} 
+                "type"      {pb(false);return sendPending(startBlock(symbol(sym.TYPE)));}
+
+}
+
+/* OPERADORES BOOLEANOS  */
+<YYINITIAL> {   
+                "and"   {pb(false);return sendPending(symbol(sym.AND));}
+                "or"    {pb(false);return sendPending(symbol(sym.OR));}
+                "not"   {pb(false);return sendPending(symbol(sym.NOT));}
+}
+
+<YYINITIAL> {
+                
+                { _Comentario}      {
+                    parserFunction.increaseLineCounter();
+                    
+                }
+                "\t"+ {              
+                    updateTabNumber();
+                }
+                "\n" {
+                        
+                        Symbol s = null;
+                        pb(true);
+                        parserFunction.increaseLineCounter();
+                        if (Store.caracterPerLine > 0 && Store.parentesisAbiertos == 0){
+                            s =  sendPending(symbol(sym.NUEVA_LINEA));
+                        }
+
+                        Store.tabsPerLine= 0;
+                        Store.currentLineNumber++;
+                        Store.caracterPerLine = 0;
+
+                        if (s != null) return s;
+                    }        
+                { _Identifier}          {
+                                            pb(false);
+                                            return sendPending(startBlock(symbol(sym.NAME, new P_String(yytext()))));
+                                        }
+                { _Int}                 {pb(false);return sendPending(symbol(sym.NUMERO,new P_Int(Integer.parseInt(yytext()))));}
+                {_Long}                 {pb(false);String str = yytext().replaceAll("\\D+","");return symbol(sym.NUMERO,new P_Long(Long.parseLong(str, 10)));}   
+                {_Float}                {pb(false);return symbol(sym.NUMERO,new P_Float(Float.parseFloat(yytext())));}
+                {_ComillaSimple}        {pb(false);return sendPending(symbol(sym.STRING,new P_String(yytext().substring(1, yylength()-1))));}
+                {_ComillaTriple}        {pb(false);return sendPending(symbol(sym.STRING,new P_String(yytext().substring(3, yylength()-3))));}
+                {_Espacio_en_Blanco}    {pb(false);}
+                
+}
+
+/* SIGNOS  */
+<YYINITIAL> {   
+                ";"     {pb(false);return sendPending(symbol(sym.PCOMA));}
+                ","     {pb(false);return sendPending(symbol(sym.COMA));}
+                "("     {pb(false);Store.parentesisAbiertos++;return sendPending(symbol(sym.APARCURVO));}
+                ")"     {pb(false);Store.parentesisAbiertos--;return sendPending(symbol(sym.CPARCURVO));}
+                "["     {pb(false);Store.parentesisAbiertos++;return sendPending(symbol(sym.APARRECTO));}
+                "]"     {pb(false);Store.parentesisAbiertos--;return sendPending(symbol(sym.CPARRECTO));}
+                "{"     {pb(false);Store.parentesisAbiertos++;return sendPending(symbol(sym.APARCURVADO));}
+                "}"     {pb(false);Store.parentesisAbiertos--;return sendPending(symbol(sym.CPARCURVADO));}
+                ":"     {
+                            pb(false);
+                            warningIndent(); 
+                            return sendPending(symbol(sym.DPUNTO));
+                        }
+                "."     {pb(false);return sendPending(symbol(sym.PUNTO));}
+                "="     {pb(false);return sendPending(symbol(sym.IGUAL));}
+}
+/* OPERADORES ARITMETICOS  */
+<YYINITIAL> {   
+                "+"     {pb(false);return sendPending(symbol(sym.SUMA));}
+                "-"     {pb(false);return sendPending(symbol(sym.RESTA_NEGACION));}
+                "*"     {pb(false);return sendPending(symbol(sym.PRODUCTO));}
+                "**"    {pb(false);return sendPending(symbol(sym.EXPONENTE));}
+                "/"     {pb(false);return sendPending(symbol(sym.DIVISION));}
+                "//"    {pb(false);return sendPending(symbol(sym.DIVISION_ENTERA));}
+                "%"     {pb(false);return sendPending(symbol(sym.MODULO));}
+                "+="    {pb(false);return sendPending(symbol(sym.SUMA_AUTOASSIGN));}
+                "-="    {pb(false);return sendPending(symbol(sym.RESTA_AUTOASSIGN));}
+                "*="    {pb(false);return sendPending(symbol(sym.MULTIPLICACION_AUTOASSIGN));}
+}
+/* OPERADORES BITWISE  */
+<YYINITIAL> {   
+                "&"     {pb(false);return sendPending(symbol(sym.AND_BITS));}
+                "|"     {pb(false);return sendPending(symbol(sym.OR_BITS));}
+                "^"     {pb(false);return sendPending(symbol(sym.XOR_BITS));}
+                "~"     {pb(false);return sendPending(symbol(sym.NOT_BITS));}
+                "<<"    {pb(false);return sendPending(symbol(sym.DES_IZQ));}
+                ">>"    {pb(false);return sendPending(symbol(sym.DES_DER));}
+}
+
+/* OPERADORES RELACIONALES  */
+<YYINITIAL> {   
+                "=="    {pb(false);return sendPending(symbol(sym.ES_IGUAL));}
+                "!="    {pb(false);return sendPending(symbol(sym.DISTINTO));}
+                "<"     {pb(false);return sendPending(symbol(sym.MENOR));}
+                ">"     {pb(false);return sendPending(symbol(sym.MAYOR));}
+                "<="    {pb(false);return sendPending(symbol(sym.MENOR_IGUAL));}
+                ">="    {pb(false);return sendPending(symbol(sym.MAYOR_IGUAL));}
+}
+
+/* errore */
+<YYINITIAL>[$ | ?]      { ErrorManager.getInstance().generateError("Erroneous character \""+yytext(), ErrorType.LEXICO); }

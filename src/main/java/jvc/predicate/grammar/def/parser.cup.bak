@@ -1,0 +1,699 @@
+package flex_cup;
+import java.io.*;
+import java_cup.runtime.*; 
+import src.Tipos.*;
+import src.ParserUtils.*;
+import src.Simbolos.*;
+import java.util.Vector;
+import java.util.Stack;
+
+parser code
+{:
+    ParserFunctions parserFunction = new ParserFunctions();
+    
+    private void print(String s){
+        System.out.println("CUP LOG: " + s);
+    }
+   
+    public ParserFunctions getParserFunction(){
+        return parserFunction;
+    }
+
+    public Boolean breakEjecutado(){
+       return parserFunction.breakEjecutado();
+    }
+
+    public void report_error(String s, Object o){
+        ErrorManager.getInstance().generateError("invalid syntax", ErrorType.SINTATIC);
+    }
+    
+    public void report_fatal_error(String s, Object o){
+        report_error(s,o);
+    }
+
+:}
+
+non terminal simple_stmt,compound_stmt,small_stmt,small_stmt_ext,coma_opt,if_stmt,
+while_stmt,for_stmt,funcdef,expr_stmt,print_stmt,flow_stmt,test,suite,if_stmt_opt_ext,
+if_stmt_opt,exprlist,testlist,parameters,parameters_opt,varargslist_ext_2,augassign,
+expr_stmt_ext,print_stmt_opt,print_stmt_ext,break_stmt,continue_stmt,return_stmt,
+return_stmt_opt,suite_ext,stmt,expr,exprlist_ext,testlist_ext,or_test,and_test,or_test_ext,
+not_test,and_test_ext,comparison,comparison_ext,comp_op,xor_expr,expr_ext,and_expr,
+xor_expr_ext,shift_expr,and_expr_ext,arith_expr,shift_expr_ext,shift_expr_opt,term,
+arith_expr_ext,arith_expr_opt,term_ext,term_op,power,atom,power_ext,trailer,atom_opt_1,
+atom_opt_2,atom_opt_3,atom_ext,testlist_comp,listmaker,dictorsetmaker,listmaker_ext,
+dictorsetmaker_ext,testlist_comp_ext,trailer_opt,subscriptlist,arglist,arglist_ext_1,
+sliceop,sliceop_opt,epsilon, file_input, file_input_opt, file_input_ext, subscriptlist_el,
+type_stmt;
+
+terminal NUEVA_LINEA,PCOMA,IF,DPUNTO,ELSE,ELIF,WHILE,FOR,IN,TYPE;
+terminal DEF,NAME,APARCURVO,CPARCURVO,PRODUCTO,EXPONENTE,COMA;
+terminal IGUAL,PRINT,BREAK,CONTINUE,RETURN,INDENTACION,DISDENTACION;
+terminal OR,AND,NOT,MENOR,MAYOR,ES_IGUAL,MAYOR_IGUAL,MENOR_IGUAL;
+terminal DISTINTO,OR_BITS,XOR_BITS,AND_BITS,DES_DER,DES_IZQ;
+terminal SUMA,RESTA_NEGACION,DIVISION,MODULO,DIVISION_ENTERA;
+terminal NOT_BITS,APARRECTO,CPARRECTO,APARCURVADO,CPARCURVADO;
+terminal NUMERO,STRING,PUNTO, SUMA_AUTOASSIGN, RESTA_AUTOASSIGN, MULTIPLICACION_AUTOASSIGN;
+
+precedence left COMA;
+precedence left PCOMA;
+
+
+
+start with file_input;
+
+file_input ::= file_input_ext;
+
+file_input_opt ::= NUEVA_LINEA | stmt;
+file_input_ext ::= epsilon | file_input_opt file_input_ext;
+
+simple_stmt ::= small_stmt small_stmt_ext NUEVA_LINEA ;
+small_stmt_ext ::= epsilon | PCOMA | PCOMA small_stmt small_stmt_ext;
+
+stmt ::= simple_stmt | compound_stmt ;
+
+compound_stmt ::= if_stmt | while_stmt | for_stmt | funcdef;
+
+small_stmt ::= expr_stmt  | print_stmt | flow_stmt | type_stmt;
+
+type_stmt::= TYPE atom:t{:parserFunction.runType(t); :} ;
+
+if_stmt ::= IF test:correIf DPUNTO
+            {: 
+                if (correIf!=null){
+                    
+                    Boolean correrIf =((P_Tipo)correIf).toBool();
+                    parserFunction.statementResult.push( parserFunction.isRunning() ); // backup
+                    parserFunction.statementResult.push(correrIf);
+                    parserFunction.excecute(correrIf);
+                }
+            :}            
+            suite
+            if_stmt_opt_ext:correElseIf 
+            {: 
+                if (correIf!=null){
+                    Boolean corrioIf = parserFunction.statementResult.pop(); // restaure
+                    Boolean corrioElseIf = (Boolean)correElseIf;
+
+                    if (!corrioIf && !corrioElseIf){
+                        parserFunction.excecute(true);
+                    }
+                    else{
+                        parserFunction.excecute(false);
+                    }
+                }
+            :}
+            if_stmt_opt:ifop
+            {:
+                if (correIf!=null){
+                    parserFunction.excecute(parserFunction.statementResult.pop());
+                }
+
+            :};
+
+if_stmt_opt ::= epsilon {:RESULT = null;:}
+                | ELSE DPUNTO suite;
+
+if_stmt_opt_ext ::= epsilon {: RESULT = false; :}
+                | if_stmt_opt_ext:corrioElseIf ELIF
+                {:
+                    parserFunction.excecute(true);
+                :}
+                 test:cumpleTest DPUNTO
+                {: 
+                    if (cumpleTest!=null){
+                        Boolean corrio = (Boolean)corrioElseIf,
+                                correrElif = ((P_Tipo)cumpleTest).toBool(),
+                                corrioIf = parserFunction.statementResult.peek(),
+                                toReturn = false;
+
+                        if (!corrio && correrElif && !corrioIf){
+                            parserFunction.excecute(true);
+                            toReturn = true;
+                        }
+                        else{
+                            parserFunction.excecute(false);
+                        }
+
+                        RESULT = toReturn || corrio;
+                    }
+                :} 
+                suite;
+
+while_stmt ::=  {:
+                    parserFunction.saveSource(true);
+                    
+                :}WHILE
+                 test:t
+                {:      
+                        parserFunction.saveSource(false);
+                        String cod = parserFunction.getSource(false);
+                        parserFunction.saveTest(cod);
+                :}
+                DPUNTO 
+                {:
+                    parserFunction.setBackupLine();
+                    parserFunction.saveBlock(true);
+                :}
+                suite
+                {:
+                   String cuerpo = parserFunction.getSource(true);
+                   parserFunction.saveBlock(false);
+                   parserFunction.runWhile(cuerpo);
+                :};
+
+for_stmt ::= FOR
+             exprlist:e IN testlist:lista 
+
+            DPUNTO 
+            {: 
+                parserFunction.excecute(false);
+                parserFunction.saveBlock(true);
+                parserFunction.setBackupLine(); 
+            :}
+            suite 
+            {: 
+                
+                String source = parserFunction.getSource(true);
+                parserFunction.saveBlock(false);    
+                parserFunction.runFor(e,lista, source);
+                
+            :};
+
+funcdef ::= DEF 
+            {: 
+                parserFunction.excecute(false);
+            :} 
+                NAME:name  parameters:args DPUNTO 
+            {: 
+                parserFunction.saveBlock(true);
+            :} 
+            suite
+            {:
+                    String source = parserFunction.getSource(true);
+                    parserFunction.saveBlock(false);
+                    parserFunction.functionDef( (P_String)name, (Stack<P_String>)args, source);
+
+            :};
+
+parameters ::= APARCURVO parameters_opt:p CPARCURVO
+                {: RESULT = p; :};
+parameters_opt ::= epsilon {: RESULT = new Stack<P_String>(); :}
+                |
+                NAME:name varargslist_ext_2:v2 
+                {:
+                    Stack<P_String> v = (Stack<P_String>)v2;
+                    v.push( (P_String)name);
+                    RESULT = v;
+                :};
+
+
+varargslist_ext_2 ::= epsilon {: RESULT = new Stack<P_String>(); :}
+                    | COMA {: RESULT = new Stack<P_String>(); :}
+                    | COMA NAME:name varargslist_ext_2:v2 
+                    {:  
+                        Stack<P_String> v = (Stack<P_String>)v2;
+                        v.push((P_String)name);
+                        RESULT = v;
+                    :};
+
+expr_stmt ::= testlist:t1 augassign:aug testlist:t2
+            {:
+                RESULT = parserFunction.augassign( (P_Tipo)t1, (Integer)aug, (P_Tipo)t2);
+            :}
+              | testlist:t expr_stmt_ext:ese
+                {:
+                    parserFunction.expr_stmt_p2(t, ese);
+                    RESULT = null;
+                :};
+
+expr_stmt_ext ::= epsilon
+                | IGUAL testlist:t expr_stmt_ext 
+                {:
+                    RESULT = t;
+                :};
+
+print_stmt ::= PRINT APARCURVO print_stmt_opt CPARCURVO;
+print_stmt_opt ::= epsilon
+                  | test:t print_stmt_ext:rest
+                    {: 
+                        Stack<P_Tipo> stack = (Stack<P_Tipo>)rest;
+                        stack.push( (P_Tipo) t );
+
+                        parserFunction.print_stmt( stack );
+                    :};
+print_stmt_ext ::=  epsilon {: RESULT = new Stack<P_Tipo>(); :}
+                    | COMA {: RESULT = new Stack<P_Tipo>(); :}
+                    | COMA test:t print_stmt_ext:rest
+                    {: 
+                        Stack<P_Tipo> stack = (Stack<P_Tipo>)rest;
+                        stack.push( (P_Tipo) t );
+
+                        RESULT = stack;
+                    :};
+
+flow_stmt ::= break_stmt | continue_stmt | return_stmt;
+
+break_stmt ::= BREAK {: 
+                if (parserFunction.isRunning()){
+                    parserFunction.excecute(false);
+                    parserFunction.ejecutarBreak();
+                }
+                RESULT = sym.BREAK; 
+            :};
+
+continue_stmt ::= CONTINUE {: 
+                    if (parserFunction.isRunning()){
+                        parserFunction.ejecutarContinue();
+                    }
+                    RESULT = sym.CONTINUE;
+                :};
+
+augassign ::= SUMA_AUTOASSIGN  {: RESULT = sym.SUMA_AUTOASSIGN; :}
+             | RESTA_AUTOASSIGN  {: RESULT = sym.RESTA_AUTOASSIGN; :}
+             | MULTIPLICACION_AUTOASSIGN {: RESULT = sym.MULTIPLICACION_AUTOASSIGN; :};
+
+return_stmt ::= RETURN return_stmt_opt:r 
+                {: 
+                    if (parserFunction.isRunning()){
+                        if (r != null){
+                            StackFrame sf = StackFrame.getInstance();
+                            sf.push(r);
+                        }
+                        parserFunction.ejecutarContinue();
+                        RESULT = r;
+                    }
+                :};
+
+return_stmt_opt ::= epsilon {: RESULT = null; :}
+                    | testlist:t 
+                    {:
+                        if (parserFunction.isRunning()){
+                            RESULT = t; 
+                        }
+                    :};
+
+suite ::= simple_stmt | NUEVA_LINEA INDENTACION suite_ext DISDENTACION;
+
+suite_ext ::= stmt
+            | stmt suite_ext;
+
+exprlist ::= expr:e exprlist_ext:ee
+            {:
+                RESULT = e;
+            :};
+exprlist_ext ::= epsilon
+                {:RESULT = null;:} 
+                | COMA 
+                | COMA expr exprlist_ext;
+
+
+testlist ::= test:t testlist_ext:te coma_opt
+            {:
+                
+                if (parserFunction.isRunning()){
+                    Stack<P_Tipo> pl = (Stack<P_Tipo>)te;
+                    P_Lista toReturn = new P_Lista();
+                    toReturn.append( (P_Tipo)t );
+                    while (!pl.isEmpty()){
+                        toReturn.append( pl.pop() );
+                    }
+                    RESULT = toReturn;
+                }
+            :};
+
+testlist_ext ::= epsilon {: RESULT =  new Stack<P_Tipo>() ; :}
+                | COMA test:t testlist_ext:tl
+                {:
+                    if (parserFunction.isRunning()){
+                        Stack<P_Tipo> pl = (Stack<P_Tipo>)tl;
+                        pl.push((P_Tipo)t);
+                        RESULT = pl;
+                    }
+                :};
+
+test ::= or_test:or
+        {:
+
+            if (or != null){
+                parserFunction.setElemento(or);  
+            }          
+            RESULT = or;
+        :};
+
+
+or_test ::=  and_test:at or_test_ext:ot
+            {:
+                
+                RESULT = parserFunction.runBoolean( (P_Tipo) at, (Vector)ot );
+            :};
+
+or_test_ext ::= epsilon {: RESULT = new Vector(); :}
+                | OR and_test:at or_test_ext:ot 
+                {:  
+                    Vector v = (Vector)ot;
+                    v.add(sym.OR);
+                    v.add(at);
+                    RESULT = v;
+                :};
+
+
+and_test ::= not_test:nt and_test_ext:ae
+            {:
+                RESULT = parserFunction.runBoolean( (P_Tipo) nt, (Vector)ae );
+            :};
+
+and_test_ext ::= epsilon {: RESULT = new Vector(); :}
+                | AND not_test:nt and_test_ext:ae
+                {:
+                    Vector v = (Vector)ae;
+                    v.add(sym.AND);
+                    v.add(nt);
+                    RESULT = v;
+                :};
+
+not_test ::= NOT  not_test:nt
+            {:
+                RESULT = parserFunction.runBooleanOperatorSimple(sym.NOT, (P_Tipo) nt, null);
+            :}
+            | comparison:c
+            {:
+                RESULT = c;
+            :};
+
+comparison ::=  expr:e comparison_ext:ce
+                {:
+                    RESULT = parserFunction.runRelationOperators(  (P_Tipo)e, (Vector)ce );  
+                :};
+
+comparison_ext ::= epsilon 
+                    {: RESULT = new Vector(); :}
+                    | comp_op:cp expr:e comparison_ext:ce
+                    {:
+                        Vector v = (Vector)ce;
+                        v.add(cp);
+                        v.add(e);
+                        RESULT = v;
+                    :};
+
+comp_op ::=   MENOR {: RESULT = sym.MENOR; :}
+            | MAYOR {: RESULT = sym.MAYOR; :}
+            | ES_IGUAL {: RESULT = sym.ES_IGUAL; :}
+            | MAYOR_IGUAL {: RESULT = sym.MAYOR_IGUAL; :}
+            | MENOR_IGUAL {: RESULT = sym.MENOR_IGUAL; :}
+            | DISTINTO  {: RESULT = sym.DISTINTO; :};
+
+expr ::= xor_expr:xe expr_ext:ee
+        {:
+            RESULT = parserFunction.runBitwiseSimple( sym.OR_BITS, (P_Tipo)xe, xe != null ? (P_Tipo)ee : null);  
+        :};
+
+expr_ext ::= epsilon 
+            {: RESULT = null; :}
+             | OR_BITS xor_expr:xe expr_ext:ee
+            {:
+                RESULT = parserFunction.runBitwiseSimple( sym.OR_BITS, (P_Tipo)xe, ee != null ? (P_Tipo)ee : null );  
+            :};
+
+xor_expr ::= and_expr:ae xor_expr_ext:xe
+            {:
+                RESULT = parserFunction.runBitwiseSimple( sym.XOR_BITS, (P_Tipo)ae, xe != null ? (P_Tipo)xe : null );  
+            :};
+xor_expr_ext ::= epsilon {:RESULT = null; :}
+                 | XOR_BITS and_expr:ae xor_expr_ext:xe
+                {:
+                    RESULT = parserFunction.runBitwiseSimple( sym.XOR_BITS, (P_Tipo)ae, xe != null ? (P_Tipo)xe : null );  
+                :};
+
+
+and_expr ::= shift_expr:se and_expr_ext:ae
+            {:
+                RESULT = parserFunction.runBitwiseSimple( sym.AND_BITS, (P_Tipo)se, ae != null ? (P_Tipo)ae : null );
+            :};
+
+and_expr_ext ::= epsilon 
+                {: RESULT = null; :} 
+                | AND_BITS shift_expr:s and_expr_ext:e
+                {:
+                    RESULT = parserFunction.runBitwiseSimple( sym.AND_BITS, (P_Tipo)s, (P_Tipo)e );
+                :};
+
+shift_expr ::=  arith_expr:ae shift_expr_ext:se
+                {:
+                    Vector vector = (Vector)se;
+                    RESULT = parserFunction.runBitwise((P_Tipo)ae, (Vector)se);
+
+                :};
+
+shift_expr_opt ::= DES_DER {: RESULT = sym.DES_DER; :}
+                 | DES_IZQ {: RESULT = sym.DES_IZQ; :};
+
+shift_expr_ext ::= epsilon {: RESULT = new Vector(); :}
+                    | shift_expr_opt:op arith_expr:tipo shift_expr_ext:rec
+                    {:  
+
+                        Vector v = (Vector)rec;
+                        v.add(op);
+                        v.add(tipo);
+                        RESULT = v;
+
+                    :};
+
+arith_expr ::=  term:t arith_expr_ext:ae
+                {:
+                    Vector vector = (Vector)ae;
+                    RESULT = parserFunction.runAritmetica( (P_Tipo)t, vector);
+                :};
+
+arith_expr_opt ::= SUMA {: RESULT = sym.SUMA; :}
+                   | RESTA_NEGACION {: RESULT = sym.RESTA_NEGACION; :};
+
+arith_expr_ext ::= epsilon {: RESULT = new Vector(); :}
+                   | arith_expr_ext:ae arith_expr_opt:op term:t
+                    {:  
+                        Vector vector = (Vector)ae;
+                        vector.add(op);
+                        vector.add(t);
+                        RESULT = vector;
+                    :};
+
+term ::= power:p term_ext:te
+        {:
+            Vector vector = (Vector)te;
+            RESULT =  parserFunction.runAritmetica( (P_Tipo)p, vector);
+        :};
+
+term_op ::=   PRODUCTO {: RESULT = sym.PRODUCTO; :}
+            | DIVISION {: RESULT = sym.DIVISION; :}
+            | MODULO {: RESULT = sym.MODULO; :}
+            | DIVISION_ENTERA {: RESULT = sym.DIVISION_ENTERA; :}
+            | EXPONENTE {: RESULT = sym.EXPONENTE; :};
+
+term_ext ::=  epsilon {: RESULT = new Vector(); :}
+            | term_op:op power:p term_ext:te
+            {: 
+                Vector v = (Vector)te;
+                v.add(op);
+                v.add(p);
+                RESULT = v;
+             :};
+
+power ::= atom:a power_ext:pw
+        {:
+
+            P_Tipo result = parserFunction.runFunction( a, pw );
+
+            /*
+              ejemplo posibles  
+                (1,3).length() 
+                 [1,2,4].concat([3,4]).getAt(3)
+                 aca se corren las funciones
+                 
+            */
+            
+            RESULT = result;
+        :};
+
+power_ext ::= epsilon {: RESULT = null; :}
+             | trailer:t power_ext:p
+            {: 
+                if ( p == null) p = new Stack<Object>();        
+                Stack<Object> v = (Stack<Object>)p;
+                v.push( t ); // puede ser instancia de un P_String o Vector, esto es nombre de function y argumentos
+
+                RESULT = v;
+             :};
+
+atom ::= APARCURVO atom_opt_1:tupla CPARCURVO {: RESULT = tupla;  :}
+       | APARRECTO  atom_opt_2:list CPARRECTO {: RESULT = list; :}
+       | APARCURVADO atom_opt_3:dic CPARCURVADO {: RESULT = dic; :}
+       | NAME:n {:           
+           P_String ps = (P_String)n;
+           ps.setIsIdentifier(true);
+           RESULT = n;
+        :}
+       | NUMERO:n 
+       {: 
+           RESULT = n;
+        :}
+        | atom_ext:string {: RESULT = string; :}
+        | RESTA_NEGACION NUMERO:n
+        {:
+            P_Tipo numero = (P_Tipo)n;
+            RESULT = numero.negacion();
+        :}
+        | RESTA_NEGACION NAME:n {:
+          P_String ps = (P_String)n;
+          ps.setIsIdentifier(true); 
+          RESULT = parserFunction.negacionVariable(n);
+       :}
+
+        | SUMA NUMERO:n
+            {: RESULT = n; :}
+        | NOT_BITS NAME:n {:
+           P_String ps = (P_String)n;
+           ps.setIsIdentifier(true); 
+           RESULT = parserFunction.notBit(n);
+        :}       
+       | NOT_BITS NUMERO:n
+       {: 
+           P_Tipo number = (P_Tipo)n;
+           RESULT = number.notBit(); 
+        :};
+        
+
+atom_opt_1 ::= epsilon:e {: RESULT = e; :} 
+               | testlist_comp:t {: RESULT = t; :};
+
+atom_opt_2 ::= epsilon 
+                | listmaker:l
+                {:  
+                    RESULT = l;
+                :};
+
+atom_opt_3 ::= epsilon 
+                | dictorsetmaker:d
+                {:
+                    RESULT = d;
+                :};
+                    
+atom_ext ::= STRING:s
+             {:                
+                RESULT = parserFunction.eliminarComillas(s);
+             :}
+             | STRING:s atom_ext:ae
+            {:
+                RESULT = new P_String( (String)((P_String)s).getVal() +  (String)((P_String)ae).getVal()  );
+            :};
+
+listmaker ::=  test:t listmaker_ext:le coma_opt
+                {:
+                    if (parserFunction.isRunning()){
+                        RESULT = parserFunction.listmaker( parserFunction.getVarValue((P_Tipo)t), (Stack<P_Tipo>)le);
+                    }
+                :};
+
+listmaker_ext ::=  epsilon
+                {:
+                    RESULT = new Stack<P_Tipo>();
+                :} 
+                 | COMA test:t listmaker_ext:le 
+                    {:
+                        if (parserFunction.isRunning()){
+                            ((Stack<P_Tipo>)le).push( parserFunction.getVarValue((P_Tipo)t));
+                            RESULT = le;
+                        }
+                    :};
+
+dictorsetmaker ::=  test:k1 DPUNTO test:v1  dictorsetmaker_ext:ext coma_opt
+                    {:
+                        if (parserFunction.isRunning()){
+                            RESULT = parserFunction.dictorsetmaker_p1( k1, v1, ext );
+                        }
+                    :};
+
+dictorsetmaker_ext ::= epsilon
+                        {:
+                            RESULT = null;
+                        :}
+                        | COMA test:k DPUNTO test:v dictorsetmaker_ext:e
+                         {:
+                            if (parserFunction.isRunning()){
+                                RESULT = parserFunction.dictorsetmaker_ext_p2(k,v,e);
+                            }
+                         :};
+
+testlist_comp ::=   test:t testlist_comp_ext:te coma_opt:co
+                    {: 
+                        if (parserFunction.isRunning()){
+                            Stack<P_Tipo> tupla = (Stack<P_Tipo>)te;
+                            RESULT = parserFunction.testlist_comp_p1( t , tupla, co); 
+                        }
+                    :};
+
+testlist_comp_ext ::= epsilon {: RESULT = new Stack<P_Tipo>(); :} 
+                    |  testlist_comp_ext:ext COMA test:t 
+                    {:
+                        Stack<P_Tipo> tupla = (Stack<P_Tipo>)ext;
+                        tupla.push( (P_Tipo)t );
+                        RESULT = tupla;
+                    :};
+
+trailer ::= APARCURVO trailer_opt:to CPARCURVO {: RESULT = to;  :}
+            | PUNTO NAME:n  {: RESULT = n; :}
+            | APARRECTO subscriptlist:sl CPARRECTO
+            {: RESULT = sl; :};
+
+subscriptlist ::= subscriptlist_el:sel
+                 {: RESULT = sel; :};
+
+subscriptlist_el ::= test:t {: 
+                        P_Slice ps = new P_Slice();
+                        ps.setStart(parserFunction.getVarValue((P_Tipo)t));
+                        RESULT = ps; 
+                    :} 
+                    |sliceop_opt:so1 DPUNTO sliceop_opt:so2  sliceop:s
+                    {: 
+                        P_Slice ps = new P_Slice();
+                        if (so1 != null){ps.setStart(parserFunction.getVarValue((P_Tipo)so1));};                        
+                        if (so2 != null){ps.setEnd(parserFunction.getVarValue((P_Tipo)so2));};
+                        if (s != null){ps.setSteps(parserFunction.getVarValue((P_Tipo)s));};
+
+                        RESULT = ps;
+                    :};
+
+sliceop ::= epsilon {: RESULT = null; :}
+            | DPUNTO sliceop_opt:s {: RESULT = s; :};
+
+sliceop_opt ::= {: RESULT = null; :} 
+                | test:t 
+                {: 
+                    RESULT = t;
+                 :};
+
+trailer_opt ::= epsilon {: RESULT = new P_Argument(); :}
+                | arglist:arg {: RESULT = arg; :};
+
+arglist ::= arglist_ext_1:ae test:t coma_opt
+            {:
+                if (parserFunction.isRunning()){
+                    P_Argument v = (P_Argument)ae;
+                    ((Stack<P_Tipo>)v.getVal()).push( parserFunction.getVarValue((P_Tipo)t) );
+                    RESULT = v;
+                }
+            :};
+
+arglist_ext_1 ::= epsilon 
+                {: RESULT = new P_Argument(); :} 
+                | arglist_ext_1:ae test:t COMA
+                {:
+                    if (parserFunction.isRunning()){
+                        P_Argument v = (P_Argument)ae;
+                        ((Stack<P_Tipo>)v.getVal()).push( parserFunction.getVarValue((P_Tipo)t) );
+                        RESULT = v;
+                    }
+                :};
+
+coma_opt ::= epsilon:e {: RESULT = e; :} | COMA {: RESULT = sym.COMA; :};
+
+epsilon ::= {: RESULT = null; :} ;
