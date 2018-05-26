@@ -18,9 +18,17 @@ import jvc.predicate.engine.types.impl.*;
 
 %{
 
+    public AnalizadorLexico(ComplexSymbolFactory sf){
+        this(null, sf);
+    }
+
     public AnalizadorLexico(java.io.Reader in, ComplexSymbolFactory sf){
         this(in);
         this.symbolFactory = sf;
+    }
+
+    public void setReader(java.io.Reader in){
+        this.zzReader = in;
     }
 
     private ComplexSymbolFactory symbolFactory ;
@@ -100,11 +108,12 @@ _Espacio_en_Blanco = \s
 }
 
 // OPERADORES ARITMETICOS
-<YYINITIAL> {   
+<YYINITIAL> {
                 "+"     { return symbol("plus", sym.PLUS_OP, null); }
                 "-"     { return symbol("minus", sym.MINUS_OP, null); }
                 "*"     { return symbol("times", sym.TIME_OP, null); }
 }
+
 
 // OPERADORES RELACIONALES
 <YYINITIAL> {   
@@ -115,6 +124,7 @@ _Espacio_en_Blanco = \s
                 "<="    { return symbol("less_equal", sym.LE_OP, null); }
                 ">="    { return symbol("great_equal", sym.GE_OP, null); }
 }
+
 
 /* errores */
 <YYINITIAL>[$ | ?] { }

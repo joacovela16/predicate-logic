@@ -9,8 +9,13 @@ import jvc.predicate.engine.types.impl.PLBoolean;
 
 public class LessThanEvaluator<L extends PLAtomic<?>, R extends PLAtomic<?>> extends BinaryEvaluator<L, R, PLBoolean> {
 
-    public LessThanEvaluator(Evaluator<L> left, Evaluator<R> right) throws Exception {
+    public LessThanEvaluator(Evaluator<L> left, Evaluator<R> right) {
+
         super(left, right);
+    }
+
+    public LessThanEvaluator() {
+
     }
 
     @Override

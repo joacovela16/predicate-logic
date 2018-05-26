@@ -11,7 +11,7 @@ import java.io.StringReader;
  */
 public class App {
 
-    static final String SOURCE = "exists a:A { not forall b:B{b==0} and true }";
+    static final String SOURCE = "5 <= 5 ";
 
     public static void main(String[] args) {
         try {

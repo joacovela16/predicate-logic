@@ -10,7 +10,7 @@ public class OrEvaluator extends BinaryEvaluator<PLBoolean, PLBoolean, PLBoolean
     public OrEvaluator() {
     }
 
-    public OrEvaluator(Evaluator<PLBoolean> left, Evaluator<PLBoolean> right) throws Exception {
+    public OrEvaluator(Evaluator<PLBoolean> left, Evaluator<PLBoolean> right) {
         super(left, right);
     }
 

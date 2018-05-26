@@ -7,17 +7,31 @@ import jvc.predicate.engine.evaluator.impl.runtime.*;
 import jvc.predicate.engine.evaluator.*;
 import jvc.predicate.engine.types.*;
 import jvc.predicate.engine.types.impl.*;
+import jvc.predicate.engine.*;
 
 parser code
 {:
 
+    private PredicateLogic predicateLogic;
+
+    public parser(java_cup.runtime.Scanner s, java_cup.runtime.SymbolFactory sf, PredicateLogic pl) {
+        super(s,sf);
+        this.predicateLogic = pl;
+    }
+
+    public PredicateLogic getPredicateLogic(){return predicateLogic;}
+
 :}
 
-non terminal simple_stmt, logical_bin, logical_bin_rec, logical_bin_opt, not_op, atomic, epsilon ;
-non terminal comparator, comparator_rec, comparator_op;
-non terminal arithmetic, arithmetic_op, arithmetic_rec;
+non terminal BinaryEvaluator arithmetic, arithmetic_op, comparator_op, arithmetic_rec, logical_bin_opt, comparator_rec;
+non terminal AtomicEvaluator atomic;
+non terminal SingleEvaluator not_opt;
+non terminal Evaluator comparator, not_op, comp_stmt, logical_bin;
+non terminal Evaluator logical_bin_rec;
+
+non terminal simple_stmt, epsilon ;
 non terminal compressed_set_name, compressed_set_name_rec;
-non terminal comp_stmt, comp_stmt_rec, comp_stmt_op,  forall_stmt, exists_stmt, stmt, compressed_ids, compressed_ids_rec;
+non terminal comp_stmt_rec, comp_stmt_op,  forall_stmt, exists_stmt, stmt, compressed_ids, compressed_ids_rec;
 
 terminal PLType INT_NUMBER;
 terminal PLType FLOAT_NUMBER;
@@ -32,31 +46,45 @@ terminal PUNTO, DOS_PUNTOS, AP_CURVO, CP_CURVO, A_LLAVES, C_LLAVES, COMA;
 
 start with stmt;
 
-stmt ::= logical_bin ;
+stmt ::= logical_bin:a
+        {:
+            predicateLogic.setEvaluatorResult(a.eval());
+        :};
 
 logical_bin ::=
 
-    not_op logical_bin_rec |
+    not_op:a logical_bin_rec {: RESULT = a; :} |
 
-    AP_CURVO logical_bin CP_CURVO logical_bin_rec ;
+    AP_CURVO logical_bin:a CP_CURVO logical_bin_rec {: RESULT = a; :};
 
 logical_bin_rec ::=
 
     epsilon |
-    logical_bin_opt not_op logical_bin_rec |
-    logical_bin_opt AP_CURVO not_op logical_bin_rec CP_CURVO
-    ;
+    logical_bin_opt:a not_op:b logical_bin_rec {: RESULT = EvaluatorBuilder.evalRight(a, b); :} |
+    logical_bin_opt:a AP_CURVO not_op:b logical_bin_rec CP_CURVO {: RESULT = EvaluatorBuilder.evalRight(a, b); :};
 
-logical_bin_opt ::= AND | OR;
+logical_bin_opt ::=
+
+    AND {: RESULT = EvaluatorBuilder.andEval(); :} |
+
+    OR {: RESULT = EvaluatorBuilder.orEval(); :};
 
 not_op ::=
-    comp_stmt  |
-    NOT not_op |
-    NOT AP_CURVO logical_bin CP_CURVO;
+    comp_stmt:c {: RESULT  = c; :}  |
+
+    not_opt:a not_op:b {: RESULT = EvaluatorBuilder.eval(a, b); :} |
+
+    not_opt:a AP_CURVO logical_bin:b CP_CURVO {: RESULT = EvaluatorBuilder.eval(a, b); :};
+
+not_opt ::= NOT {: RESULT = EvaluatorBuilder.notEval(); :};
 
 // ============================================================ //
 
-comp_stmt ::= comparator | forall_stmt | exists_stmt ;
+comp_stmt ::=
+
+    comparator:c {: RESULT = c; :} |
+    forall_stmt |
+    exists_stmt ;
 
 forall_stmt ::= FORALL compressed_ids DOS_PUNTOS compressed_set_name A_LLAVES logical_bin C_LLAVES;
 
@@ -64,38 +92,58 @@ exists_stmt ::= EXISTS compressed_ids DOS_PUNTOS compressed_set_name A_LLAVES lo
 
 // ============================================================ //
 
-comparator ::= arithmetic comparator_rec;
+comparator ::= arithmetic:a comparator_rec:c
+{:
+    //System.out.println(a);
+    //System.out.println(c);
+    RESULT = EvaluatorBuilder.keepBin(c, a);
+:};
 
 comparator_rec ::=
     epsilon |
-    comparator_op arithmetic comparator_rec;
+    comparator_op:op arithmetic:a comparator_rec
+    {:
+     //System.out.println(op);
+     //System.out.println(a);
+     RESULT = EvaluatorBuilder.setRight(op, a);
+    :};
 
 comparator_op ::=
-    LE_OP |
-    LT_OP |
-    EQUAL_OP |
-    NOT_EQUAL_OP |
-    GE_OP |
-    GT_OP;
+    LE_OP {: RESULT = EvaluatorBuilder.leEval(); :} |
+    LT_OP {: RESULT = EvaluatorBuilder.ltEval(); :} |
+    EQUAL_OP {: RESULT = EvaluatorBuilder.equalEval(); :} |
+    NOT_EQUAL_OP {: RESULT = EvaluatorBuilder.notEqualEval(); :} |
+    GE_OP {: RESULT = EvaluatorBuilder.geEval(); :} |
+    GT_OP {: RESULT = EvaluatorBuilder.gtEval(); :};
 
-arithmetic ::= atomic arithmetic_rec;
+arithmetic ::= atomic:atom arithmetic_rec:rec {: RESULT = EvaluatorBuilder.setLeft( rec, atom); :};
 
 arithmetic_rec ::=
 
     epsilon |
-    arithmetic_op atomic arithmetic_rec;
+    arithmetic_op:op atomic:atom arithmetic_rec
+    {:
+        //System.out.println(op);
+        //System.out.println(atom);
+        //System.out.println(rec);
 
-arithmetic_op ::= PLUS_OP | MINUS_OP | TIME_OP;
+        RESULT = EvaluatorBuilder.setRight(op, atom);
+    :};
+
+arithmetic_op ::=
+    PLUS_OP {: RESULT = EvaluatorBuilder.plusEval(); :} |
+    MINUS_OP {: RESULT = EvaluatorBuilder.minusEval(); :} |
+    TIME_OP {: RESULT = EvaluatorBuilder.timeEval(); :};
 
 atomic ::=
     IDENTIFIER AP_CURVO compressed_ids CP_CURVO | // funcion
     RELATION | // posible variable
     RELATION AP_CURVO compressed_ids CP_CURVO | // relacion
     IDENTIFIER |
-    INT_NUMBER:c |
-    FLOAT_NUMBER:c |
-    BOOLEAN:c |
-    STRING:c;
+    INT_NUMBER:c {: RESULT = EvaluatorBuilder.eval(c); :} |
+    FLOAT_NUMBER:c {: RESULT = EvaluatorBuilder.eval(c); :} |
+    BOOLEAN:c {: RESULT = EvaluatorBuilder.eval(c); :} |
+    STRING:c {: RESULT = EvaluatorBuilder.eval(c); :};
 
 
 compressed_ids ::= IDENTIFIER compressed_ids_rec;

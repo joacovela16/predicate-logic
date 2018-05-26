@@ -9,7 +9,11 @@ import jvc.predicate.engine.types.impl.PLBoolean;
 
 public class GreatEqualEvaluator<L extends PLAtomic<?>, R extends PLAtomic<?>> extends BinaryEvaluator<L, R, PLBoolean> {
 
-    public GreatEqualEvaluator(Evaluator<L> left, Evaluator<R> right) throws Exception {
+    public GreatEqualEvaluator() {
+
+    }
+
+    public GreatEqualEvaluator(Evaluator<L> left, Evaluator<R> right) {
         super(left, right);
     }
 

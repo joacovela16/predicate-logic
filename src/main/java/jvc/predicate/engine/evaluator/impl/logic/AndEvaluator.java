@@ -10,7 +10,7 @@ public class AndEvaluator extends BinaryEvaluator<PLBoolean, PLBoolean, PLBoolea
     public AndEvaluator() {
     }
 
-    public AndEvaluator(Evaluator<PLBoolean> left, Evaluator<PLBoolean> right) throws Exception {
+    public AndEvaluator(Evaluator<PLBoolean> left, Evaluator<PLBoolean> right) {
         super(left, right);
     }
 

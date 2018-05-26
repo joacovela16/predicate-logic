@@ -273,9 +273,17 @@ public class AnalizadorLexico implements java_cup.runtime.Scanner {
 
   /* user code: */
 
+    public AnalizadorLexico(ComplexSymbolFactory sf){
+        this(null, sf);
+    }
+
     public AnalizadorLexico(java.io.Reader in, ComplexSymbolFactory sf){
         this(in);
         this.symbolFactory = sf;
+    }
+
+    public void setReader(java.io.Reader in){
+        this.zzReader = in;
     }
 
     private ComplexSymbolFactory symbolFactory ;

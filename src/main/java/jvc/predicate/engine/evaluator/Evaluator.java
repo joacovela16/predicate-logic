@@ -1,6 +1,14 @@
 package jvc.predicate.engine.evaluator;
 
-public interface Evaluator<T> {
+public abstract class Evaluator<T> {
 
-    EvaluatorResult<T> run();
+    public abstract boolean validate();
+
+    protected abstract EvaluatorResult<T> run();
+
+    public EvaluatorResult<T> eval() {
+
+        return run();
+
+    }
 }

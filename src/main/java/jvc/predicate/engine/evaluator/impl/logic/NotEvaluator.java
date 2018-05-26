@@ -10,7 +10,7 @@ public class NotEvaluator extends SingleEvaluator<PLBoolean, PLBoolean> {
     public NotEvaluator() {
     }
 
-    public NotEvaluator(Evaluator<PLBoolean> data) throws Exception {
+    public NotEvaluator(Evaluator<PLBoolean> data) {
         super(data);
     }
 
