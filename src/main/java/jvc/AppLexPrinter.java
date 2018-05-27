@@ -14,7 +14,7 @@ public class AppLexPrinter {
         try {
             ComplexSymbolFactory symbolFactory = new ComplexSymbolFactory();
 
-            String src = App.SOURCE;
+            String src = "forall {a:A} 5 == 5";
 
             AnalizadorLexico analizadorLexico = new AnalizadorLexico(new StringReader(src), symbolFactory);
 

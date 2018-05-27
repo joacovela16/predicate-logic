@@ -13,12 +13,6 @@ public abstract class SingleEvaluator<L, T> extends Evaluator<T> {
         this.evaluator = evaluator;
     }
 
-    @Override
-    public boolean validate() {
-
-        return evaluator != null;
-    }
-
     public void setEvaluator(Evaluator<L> evaluator) {
 
         this.evaluator = evaluator;
@@ -28,4 +22,5 @@ public abstract class SingleEvaluator<L, T> extends Evaluator<T> {
 
         return evaluator.run();
     }
+
 }

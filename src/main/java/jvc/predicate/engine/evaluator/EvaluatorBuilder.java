@@ -1,52 +1,42 @@
 package jvc.predicate.engine.evaluator;
 
-import jvc.predicate.engine.evaluator.impl.arithmetic.PlusEvaluator;
+import jvc.predicate.engine.PredicateLogic;
+import jvc.predicate.engine.evaluator.impl.arithmetic.*;
 import jvc.predicate.engine.evaluator.impl.comparation.*;
 import jvc.predicate.engine.evaluator.impl.logic.AndEvaluator;
 import jvc.predicate.engine.evaluator.impl.logic.NotEvaluator;
 import jvc.predicate.engine.evaluator.impl.logic.OrEvaluator;
+import jvc.predicate.engine.evaluator.impl.runtime.ExistEvaluator;
+import jvc.predicate.engine.evaluator.impl.runtime.ForallEvaluator;
+import jvc.predicate.engine.evaluator.impl.runtime.TypeEvaluator;
 import jvc.predicate.engine.evaluator.impl.runtime.VariableEvaluator;
 import jvc.predicate.engine.types.PLType;
 
-import java.util.function.BinaryOperator;
+import java.util.List;
 
 public class EvaluatorBuilder {
 
     @SuppressWarnings("unchecked")
-    public static BinaryEvaluator setRight(BinaryEvaluator binaryEvaluator, Evaluator e) {
+    public static Evaluator evalForall(List<String> variablesName, List<String> setName, Evaluator e, PredicateLogic predicateLogic) {
 
-        binaryEvaluator.setRight(e);
-        return binaryEvaluator;
+        ForallEvaluator forallEvaluator = new ForallEvaluator(variablesName, setName, predicateLogic.getSymbolTable());
+        forallEvaluator.setEvaluator(e);
+
+        return forallEvaluator;
     }
 
     @SuppressWarnings("unchecked")
-    public static BinaryEvaluator setLeft(BinaryEvaluator binaryEvaluator, Evaluator e) {
+    public static Evaluator evalExist(List<String> variablesName, List<String> setName, Evaluator e, PredicateLogic predicateLogic) {
 
-        binaryEvaluator.setLeft(e);
-        return binaryEvaluator;
+        ExistEvaluator existEvaluator = new ExistEvaluator(variablesName, setName, predicateLogic.getSymbolTable());
+        existEvaluator.setEvaluator(e);
 
+        return existEvaluator;
     }
 
-    @SuppressWarnings("unchecked")
-    public static Evaluator evalRight(BinaryEvaluator binaryEvaluator, Evaluator e) {
+    public static Evaluator eval(String key, PredicateLogic predicateLogic) {
 
-        if (binaryEvaluator == null)
-            return e;
-
-        binaryEvaluator.setRight(e);
-
-        return binaryEvaluator;
-    }
-
-    @SuppressWarnings("unchecked")
-    public static Evaluator evalLeft(BinaryEvaluator binaryEvaluator, Evaluator e) {
-
-        if (binaryEvaluator == null)
-            return e;
-
-        binaryEvaluator.setLeft(e);
-
-        return binaryEvaluator;
+        return new VariableEvaluator(key, predicateLogic.getSymbolTable());
     }
 
     @SuppressWarnings("unchecked")
@@ -60,19 +50,17 @@ public class EvaluatorBuilder {
         return singleEvaluator;
     }
 
-    public static Evaluator keepOne(Evaluator e1, Evaluator e2) {
+    @SuppressWarnings("unchecked")
+    public static Evaluator eval(Evaluator e1, BinaryEvaluator bin, Evaluator e2) {
 
-        return e1 == null ? e2 : e1;
+        bin.setLeft(e1);
+        bin.setRight(e2);
+        return bin;
     }
 
-    public static BinaryEvaluator keepBin(BinaryEvaluator b1, BinaryEvaluator b2) {
+    public static TypeEvaluator eval(PLType a) {
 
-        return b1 == null ? b2 : b1;
-    }
-
-    public static VariableEvaluator eval(PLType a) {
-
-        return new VariableEvaluator(a);
+        return new TypeEvaluator(a);
     }
 
     public static BinaryEvaluator andEval() {
@@ -95,14 +83,24 @@ public class EvaluatorBuilder {
         return new PlusEvaluator();
     }
 
+    public static BinaryEvaluator divEval() {
+
+        return new DivEvaluator();
+    }
+
+    public static BinaryEvaluator modEval() {
+
+        return new ModEvaluator();
+    }
+
     public static BinaryEvaluator minusEval() {
 
-        return new PlusEvaluator();
+        return new MinusEvaluator();
     }
 
     public static BinaryEvaluator timeEval() {
 
-        return new PlusEvaluator();
+        return new TimeEvaluator();
     }
 
     public static BinaryEvaluator leEval() {

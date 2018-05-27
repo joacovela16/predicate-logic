@@ -6,10 +6,15 @@ public class EvaluatorResult<T> {
     private boolean success;
     private String message;
 
+    public EvaluatorResult() {
+        this(true, null, null);
+    }
+
     public EvaluatorResult(T data) {
 
         this(true, data, null);
     }
+
 
     public EvaluatorResult(String message) {
 

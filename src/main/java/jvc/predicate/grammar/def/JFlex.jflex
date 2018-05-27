@@ -75,7 +75,7 @@ _Espacio_en_Blanco = \s
 <YYINITIAL> {  
                 ("true" | "false") { return symbol(yytext(), sym.BOOLEAN, new PLBoolean(yytext())); }
                 "forall"    { return symbol("forall", sym.FORALL, null); }
-                "exists"    { return symbol("exists", sym.EXISTS, null); }
+                "exist"    { return symbol("exist", sym.EXIST, null); }
 }
 
 // OPERADORES BOOLEANOS
@@ -112,6 +112,8 @@ _Espacio_en_Blanco = \s
                 "+"     { return symbol("plus", sym.PLUS_OP, null); }
                 "-"     { return symbol("minus", sym.MINUS_OP, null); }
                 "*"     { return symbol("times", sym.TIME_OP, null); }
+                "/"     { return symbol("div", sym.DIV_OP, null); }
+                "%"     { return symbol("mod", sym.MOD_OP, null); }
 }
 
 

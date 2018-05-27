@@ -10,22 +10,32 @@ public abstract class PLType<T> {
     public final static String BOOLEAN = "bool";
     public final static String FLOAT = "float";
     public final static String STRING = "string";
-    public final static String LIST = "list";
+    public final static String COLLECTION = "collection";
+    public final static String FUNCTION = "function";
+    public final static String PREDICATE = "predicate";
 
     private T data;
 
     public PLType(T data) {
+
         this.data = data;
     }
 
     public abstract String getType();
 
     public T getData() {
+
         return data;
     }
 
     public boolean is(String type) {
+
         return Objects.equals(getType(), type);
+    }
+
+    public PLCollection toCollection() {
+
+        return (PLCollection) this;
     }
 
     public PLInt toInt() {

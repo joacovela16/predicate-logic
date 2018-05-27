@@ -10,7 +10,12 @@ import jvc.predicate.engine.types.impl.PLInt;
 
 public class TimeEvaluator<L extends PLAtomic<?>, R extends PLAtomic<?>> extends BinaryEvaluator<L, R, PLAtomic<?>> {
 
-    public TimeEvaluator(Evaluator<L> left, Evaluator<R> right) throws Exception {
+    public TimeEvaluator() {
+
+    }
+
+    public TimeEvaluator(Evaluator<L> left, Evaluator<R> right) {
+
         super(left, right);
     }
 

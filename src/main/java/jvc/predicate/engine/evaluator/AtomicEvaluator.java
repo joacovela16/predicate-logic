@@ -4,6 +4,10 @@ public abstract class AtomicEvaluator<T> extends Evaluator<T> {
 
     private T data;
 
+    public AtomicEvaluator() {
+
+    }
+
     public AtomicEvaluator(T data) {
 
         this.data = data;
@@ -14,9 +18,4 @@ public abstract class AtomicEvaluator<T> extends Evaluator<T> {
         return data;
     }
 
-    @Override
-    public boolean validate() {
-
-        return data != null;
-    }
 }

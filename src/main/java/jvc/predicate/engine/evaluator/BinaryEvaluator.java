@@ -16,11 +16,6 @@ public abstract class BinaryEvaluator<L, R, T> extends Evaluator<T> {
 
     }
 
-    @Override
-    public boolean validate() {
-
-        return left != null && right != null;
-    }
 
     public void setLeft(Evaluator<L> left) {
 

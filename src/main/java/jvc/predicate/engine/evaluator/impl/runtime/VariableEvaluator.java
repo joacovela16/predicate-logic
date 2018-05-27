@@ -1,17 +1,38 @@
 package jvc.predicate.engine.evaluator.impl.runtime;
 
-import jvc.predicate.engine.evaluator.AtomicEvaluator;
+import jvc.predicate.engine.SymbolTable;
+import jvc.predicate.engine.evaluator.Evaluator;
 import jvc.predicate.engine.evaluator.EvaluatorResult;
 import jvc.predicate.engine.types.PLType;
 
-public class VariableEvaluator extends AtomicEvaluator<PLType<?>> {
+public class VariableEvaluator extends Evaluator<PLType<?>> {
 
-    public VariableEvaluator(PLType<?> data) {
-        super(data);
+    private String variableName;
+    private SymbolTable symbolTable;
+
+    public VariableEvaluator(String variableName, SymbolTable symbolTable) {
+
+        this.variableName = variableName;
+
+        this.symbolTable = symbolTable;
     }
 
     @Override
-    public EvaluatorResult<PLType<?>> run() {
-        return new EvaluatorResult<>(getData());
+    protected EvaluatorResult<PLType<?>> run() {
+
+        if (symbolTable == null || variableName == null) {
+            return new EvaluatorResult<>("Faltan datos");
+        }
+
+        PLType<?> variable = symbolTable.getVariable(variableName);
+
+        if (variable == null) {
+            return new EvaluatorResult<>("No existe variable " + variableName);
+        }
+
+        TypeEvaluator typeEvaluator = new TypeEvaluator(variable);
+
+        return typeEvaluator.eval();
     }
+
 }

@@ -23,133 +23,160 @@ parser code
 
 :}
 
-non terminal BinaryEvaluator arithmetic, arithmetic_op, comparator_op, arithmetic_rec, logical_bin_opt, comparator_rec;
-non terminal AtomicEvaluator atomic;
-non terminal SingleEvaluator not_opt;
-non terminal Evaluator comparator, not_op, comp_stmt, logical_bin;
-non terminal Evaluator logical_bin_rec;
+non terminal BinaryEvaluator  relational_op,
+                              equality_op,
+                              additive_op;
 
-non terminal simple_stmt, epsilon ;
-non terminal compressed_set_name, compressed_set_name_rec;
-non terminal comp_stmt_rec, comp_stmt_op,  forall_stmt, exists_stmt, stmt, compressed_ids, compressed_ids_rec;
+non terminal Evaluator primary_expression,
+                       expression,
+                       main,
+                       forall_expression,
+                       exists_expression,
+                       logical_not_expression,
+                       additive_expression,
+                       logical_or_expression,
+                       logical_and_expression,
+                       relational_expression,
+                       multiplicative_expression,
+                       equality_expression,
+                       postfix_expression;
+
+non terminal java.util.ArrayList<String> parameter_set, parameter;
 
 terminal PLType INT_NUMBER;
 terminal PLType FLOAT_NUMBER;
 terminal PLType BOOLEAN;
 terminal PLType STRING;
 
-terminal FORALL, EXISTS, SETNAME;
-terminal AND, OR, NOT, PLUS_OP, MINUS_OP, TIME_OP;
+terminal FORALL, EXIST;
+terminal AND, OR, NOT, PLUS_OP, MINUS_OP, TIME_OP, DIV_OP, MOD_OP;
 terminal LT_OP, GT_OP, LE_OP, GE_OP, EQUAL_OP, NOT_EQUAL_OP;
-terminal IDENTIFIER, RELATION;
 terminal PUNTO, DOS_PUNTOS, AP_CURVO, CP_CURVO, A_LLAVES, C_LLAVES, COMA;
+terminal String IDENTIFIER, RELATION, SETNAME;
+start with main;
 
-start with stmt;
-
-stmt ::= logical_bin:a
-        {:
-            predicateLogic.setEvaluatorResult(a.eval());
-        :};
-
-logical_bin ::=
-
-    not_op:a logical_bin_rec {: RESULT = a; :} |
-
-    AP_CURVO logical_bin:a CP_CURVO logical_bin_rec {: RESULT = a; :};
-
-logical_bin_rec ::=
-
-    epsilon |
-    logical_bin_opt:a not_op:b logical_bin_rec {: RESULT = EvaluatorBuilder.evalRight(a, b); :} |
-    logical_bin_opt:a AP_CURVO not_op:b logical_bin_rec CP_CURVO {: RESULT = EvaluatorBuilder.evalRight(a, b); :};
-
-logical_bin_opt ::=
-
-    AND {: RESULT = EvaluatorBuilder.andEval(); :} |
-
-    OR {: RESULT = EvaluatorBuilder.orEval(); :};
-
-not_op ::=
-    comp_stmt:c {: RESULT  = c; :}  |
-
-    not_opt:a not_op:b {: RESULT = EvaluatorBuilder.eval(a, b); :} |
-
-    not_opt:a AP_CURVO logical_bin:b CP_CURVO {: RESULT = EvaluatorBuilder.eval(a, b); :};
-
-not_opt ::= NOT {: RESULT = EvaluatorBuilder.notEval(); :};
-
-// ============================================================ //
-
-comp_stmt ::=
-
-    comparator:c {: RESULT = c; :} |
-    forall_stmt |
-    exists_stmt ;
-
-forall_stmt ::= FORALL compressed_ids DOS_PUNTOS compressed_set_name A_LLAVES logical_bin C_LLAVES;
-
-exists_stmt ::= EXISTS compressed_ids DOS_PUNTOS compressed_set_name A_LLAVES logical_bin C_LLAVES ;
-
-// ============================================================ //
-
-comparator ::= arithmetic:a comparator_rec:c
-{:
-    //System.out.println(a);
-    //System.out.println(c);
-    RESULT = EvaluatorBuilder.keepBin(c, a);
-:};
-
-comparator_rec ::=
-    epsilon |
-    comparator_op:op arithmetic:a comparator_rec
+main ::=
+    expression:e
     {:
-     //System.out.println(op);
-     //System.out.println(a);
-     RESULT = EvaluatorBuilder.setRight(op, a);
+        predicateLogic.setEvaluatorResult(e.eval());
     :};
 
-comparator_op ::=
-    LE_OP {: RESULT = EvaluatorBuilder.leEval(); :} |
-    LT_OP {: RESULT = EvaluatorBuilder.ltEval(); :} |
+expression ::= logical_not_expression:loe {: RESULT = loe; :};
+
+logical_not_expression ::=
+    logical_or_expression:loe {: RESULT = loe; :} |
+    NOT logical_not_expression:lne {: RESULT  = EvaluatorBuilder.eval( EvaluatorBuilder.notEval(), lne ); :};
+
+logical_or_expression ::=
+    forall_expression:lae {: RESULT = lae; :} |
+    logical_or_expression:loe OR:op forall_expression:lae
+    {:
+        RESULT = EvaluatorBuilder.eval( loe, EvaluatorBuilder.orEval(), lae );
+    :};
+
+forall_expression ::=
+    exists_expression:ee {: RESULT = ee; :} |
+    FORALL  A_LLAVES  parameter:p DOS_PUNTOS parameter_set:ps C_LLAVES forall_expression:fe
+    {:
+        RESULT = EvaluatorBuilder.evalForall(p, ps, fe, predicateLogic);
+    :};
+
+exists_expression ::=
+    logical_and_expression:lae {: RESULT = lae; :} |
+    EXIST  A_LLAVES  parameter:p DOS_PUNTOS parameter_set:ps C_LLAVES exists_expression:ex 
+    {:
+        RESULT = EvaluatorBuilder.evalExist(p, ps, ex, predicateLogic);
+    :};
+
+logical_and_expression ::=
+    equality_expression:ioe {: RESULT = ioe; :}|
+    logical_and_expression:lae AND:op equality_expression:ioe
+    {:
+        RESULT = EvaluatorBuilder.eval( lae, EvaluatorBuilder.andEval(), ioe );
+    :};
+
+equality_expression ::=
+    relational_expression:re {: RESULT = re; :} |
+    equality_expression:ee equality_op:op relational_expression:re
+    {:
+        RESULT = EvaluatorBuilder.eval(ee, op, re);
+    :} ;
+
+equality_op ::=
     EQUAL_OP {: RESULT = EvaluatorBuilder.equalEval(); :} |
-    NOT_EQUAL_OP {: RESULT = EvaluatorBuilder.notEqualEval(); :} |
-    GE_OP {: RESULT = EvaluatorBuilder.geEval(); :} |
-    GT_OP {: RESULT = EvaluatorBuilder.gtEval(); :};
+    NOT_EQUAL_OP {: RESULT = EvaluatorBuilder.notEqualEval(); :};
 
-arithmetic ::= atomic:atom arithmetic_rec:rec {: RESULT = EvaluatorBuilder.setLeft( rec, atom); :};
-
-arithmetic_rec ::=
-
-    epsilon |
-    arithmetic_op:op atomic:atom arithmetic_rec
+relational_expression ::=
+    additive_expression:ae {: RESULT = ae; :}|
+    relational_expression:re relational_op:op additive_expression:se
     {:
-        //System.out.println(op);
-        //System.out.println(atom);
-        //System.out.println(rec);
-
-        RESULT = EvaluatorBuilder.setRight(op, atom);
+        RESULT = EvaluatorBuilder.eval(re, op, se);
     :};
 
-arithmetic_op ::=
+relational_op ::=
+    LT_OP {:  RESULT =  EvaluatorBuilder.ltEval(); :} |
+    GT_OP {:  RESULT =  EvaluatorBuilder.gtEval(); :} |
+    LE_OP {:  RESULT =  EvaluatorBuilder.leEval(); :} |
+    GE_OP {:  RESULT =  EvaluatorBuilder.geEval(); :};
+
+additive_expression ::=
+    multiplicative_expression:me {: RESULT = me; :}|
+    additive_expression:ae additive_op:op multiplicative_expression:me
+    {:
+        RESULT  = EvaluatorBuilder.eval(ae, op, me);
+    :};
+
+additive_op ::=
     PLUS_OP {: RESULT = EvaluatorBuilder.plusEval(); :} |
-    MINUS_OP {: RESULT = EvaluatorBuilder.minusEval(); :} |
-    TIME_OP {: RESULT = EvaluatorBuilder.timeEval(); :};
+    DIV_OP {: RESULT = EvaluatorBuilder.divEval(); :} |
+    MOD_OP {: RESULT = EvaluatorBuilder.modEval(); :} |
+    MINUS_OP {: RESULT = EvaluatorBuilder.minusEval(); :};
 
-atomic ::=
-    IDENTIFIER AP_CURVO compressed_ids CP_CURVO | // funcion
-    RELATION | // posible variable
-    RELATION AP_CURVO compressed_ids CP_CURVO | // relacion
-    IDENTIFIER |
-    INT_NUMBER:c {: RESULT = EvaluatorBuilder.eval(c); :} |
-    FLOAT_NUMBER:c {: RESULT = EvaluatorBuilder.eval(c); :} |
-    BOOLEAN:c {: RESULT = EvaluatorBuilder.eval(c); :} |
-    STRING:c {: RESULT = EvaluatorBuilder.eval(c); :};
+multiplicative_expression ::=
+    postfix_expression:pe {: RESULT = pe; :} |
+    multiplicative_expression:me TIME_OP postfix_expression:ce
+    {:
+        RESULT  = EvaluatorBuilder.eval(me, EvaluatorBuilder.timeEval() , ce);
+    :};
 
 
-compressed_ids ::= IDENTIFIER compressed_ids_rec;
-compressed_ids_rec ::= epsilon | COMA IDENTIFIER compressed_ids_rec;
+postfix_expression ::=
 
-compressed_set_name ::= SETNAME compressed_set_name_rec;
-compressed_set_name_rec ::= epsilon | COMA SETNAME compressed_set_name_rec;
+    primary_expression:pe {:  RESULT = pe; :} |
+    AP_CURVO expression:e  CP_CURVO {:  RESULT = e; :} |
+    postfix_expression:pe AP_CURVO expression:e CP_CURVO
+    {:
 
-epsilon ::= {: RESULT=null; :};
+        if (pe!=null) System.out.println(">>>>>>>>>> postfix_expression");
+
+        RESULT = e;
+    :};
+
+primary_expression ::=
+      IDENTIFIER:id {: RESULT = EvaluatorBuilder.eval(id, predicateLogic); :}
+    | INT_NUMBER:c {: RESULT = EvaluatorBuilder.eval(c); :}
+    | FLOAT_NUMBER:c {: RESULT = EvaluatorBuilder.eval(c); :}
+    | BOOLEAN:c {: RESULT = EvaluatorBuilder.eval(c); :}
+    | STRING:c {: RESULT = EvaluatorBuilder.eval(c); :};
+
+parameter ::=
+    IDENTIFIER:sn
+    {:
+        RESULT = new java.util.ArrayList<String>(){{add(sn);}};
+    :}|
+    parameter:ps COMA IDENTIFIER:sn
+    {:
+        ps.add(sn);
+        RESULT = ps;
+    :};
+
+parameter_set ::=
+    SETNAME:sn
+    {:
+        RESULT = new java.util.ArrayList<String>(){{add(sn);}};
+    :}|
+    parameter_set:ps COMA SETNAME:sn
+    {:
+        ps.add(sn);
+        RESULT = ps;
+    :};

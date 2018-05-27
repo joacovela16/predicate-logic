@@ -8,26 +8,27 @@ import jvc.predicate.engine.types.impl.PLAtomic;
 import jvc.predicate.engine.types.impl.PLFloat;
 import jvc.predicate.engine.types.impl.PLInt;
 
-public class MinusEvaluator<L extends PLAtomic<?>, R extends PLAtomic<?>> extends BinaryEvaluator<L, R, PLAtomic<?>> {
+public class DivEvaluator<L extends PLAtomic<?>, R extends PLAtomic<?>> extends BinaryEvaluator<L, R, PLAtomic<?>> {
 
-    public MinusEvaluator() {
+    public DivEvaluator() {
 
     }
 
-    public MinusEvaluator(Evaluator<L> left, Evaluator<R> right) {
+    public DivEvaluator(Evaluator<L> left, Evaluator<R> right) {
+
         super(left, right);
     }
 
     @Override
     public EvaluatorResult<PLAtomic<?>> run() {
 
-        PLAtomic<?> result;
-
         EvaluatorResult<L> leftResult = getLeft();
         EvaluatorResult<R> rightResult = getRight();
 
         L left = leftResult.getData();
         R right = rightResult.getData();
+
+        PLAtomic<?> result;
 
         switch (left.getType()) {
 
@@ -39,18 +40,18 @@ public class MinusEvaluator<L extends PLAtomic<?>, R extends PLAtomic<?>> extend
                 switch (right.getType()) {
                     case PLType.BOOLEAN:
 
-                        result = new PLInt(leftInt - (right.toBool().getData() ? 1 : 0));
+                        result = new PLInt(leftInt / (right.toBool().getData() ? 1 : 0));
 
                         break;
                     case PLType.INT:
 
-                        result = new PLInt(leftInt - right.toInt().getData());
+                        result = new PLInt(leftInt / right.toInt().getData());
 
                         break;
 
                     case PLType.FLOAT:
 
-                        result = new PLFloat(leftInt - right.toFloat().getData());
+                        result = new PLFloat(leftInt / right.toFloat().getData());
 
                         break;
 
@@ -68,18 +69,18 @@ public class MinusEvaluator<L extends PLAtomic<?>, R extends PLAtomic<?>> extend
                 switch (right.getType()) {
                     case PLType.BOOLEAN:
 
-                        result = new PLFloat(leftFloat - (right.toBool().getData() ? 1 : 0));
+                        result = new PLFloat(leftFloat / (right.toBool().getData() ? 1 : 0));
 
                         break;
                     case PLType.INT:
 
-                        result = new PLFloat(leftFloat - right.toInt().getData());
+                        result = new PLFloat(leftFloat / right.toInt().getData());
 
                         break;
 
                     case PLType.FLOAT:
 
-                        result = new PLFloat(leftFloat - right.toFloat().getData());
+                        result = new PLFloat(leftFloat / right.toFloat().getData());
 
                         break;
 

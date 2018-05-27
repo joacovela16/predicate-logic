@@ -11,7 +11,7 @@ import java.io.StringReader;
  */
 public class App {
 
-    static final String SOURCE = "5 <= 5 ";
+    static final String SOURCE = "forall {a:A} 5 == 5";
 
     public static void main(String[] args) {
         try {
