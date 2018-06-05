@@ -33,6 +33,10 @@ public class EvaluatorResult<T> {
         return success;
     }
 
+    public boolean isFailure(){
+        return !success;
+    }
+
     public T getData() {
 
         return data;

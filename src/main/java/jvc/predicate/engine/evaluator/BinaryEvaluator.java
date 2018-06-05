@@ -1,21 +1,34 @@
 package jvc.predicate.engine.evaluator;
 
+import jvc.predicate.engine.type.PLOperator;
+
 public abstract class BinaryEvaluator<L, R, T> extends Evaluator<T> {
 
     private Evaluator<L> left;
     private Evaluator<R> right;
+    private PLOperator<EvaluatorResult<T>> operator;
 
     public BinaryEvaluator() {
 
+        operator = new PLOperator<>();
     }
 
-    public BinaryEvaluator(Evaluator<L> left, Evaluator<R> right) {
+    public PLOperator<EvaluatorResult<T>> getOperator() {
 
-        this.left = left;
-        this.right = right;
-
+        return operator;
     }
 
+    @Override
+    protected EvaluatorResult<T> run() {
+
+        EvaluatorResult<L> leftResult = getLeft();
+        EvaluatorResult<R> rightResult = getRight();
+
+        L left = leftResult.getData();
+        R right = rightResult.getData();
+
+        return operator.process(left, right);
+    }
 
     public void setLeft(Evaluator<L> left) {
 

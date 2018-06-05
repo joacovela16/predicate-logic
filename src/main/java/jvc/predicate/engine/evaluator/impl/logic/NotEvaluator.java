@@ -1,25 +1,20 @@
 package jvc.predicate.engine.evaluator.impl.logic;
 
-import jvc.predicate.engine.evaluator.Evaluator;
 import jvc.predicate.engine.evaluator.EvaluatorResult;
 import jvc.predicate.engine.evaluator.SingleEvaluator;
-import jvc.predicate.engine.types.impl.PLBoolean;
 
-public class NotEvaluator extends SingleEvaluator<PLBoolean, PLBoolean> {
+public class NotEvaluator extends SingleEvaluator<Boolean, Boolean> {
 
     public NotEvaluator() {
-    }
 
-    public NotEvaluator(Evaluator<PLBoolean> data) {
-        super(data);
     }
 
     @Override
-    public EvaluatorResult<PLBoolean> run() {
+    public EvaluatorResult<Boolean> run() {
 
-        EvaluatorResult<PLBoolean> evaluator = getEvaluator();
-        PLBoolean data = evaluator.getData();
+        EvaluatorResult<Boolean> evaluator = getEvaluator();
+        Boolean data = evaluator.getData();
 
-        return new EvaluatorResult<>(new PLBoolean(!data.getData()));
+        return new EvaluatorResult<>(!data);
     }
 }

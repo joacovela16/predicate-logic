@@ -1,21 +1,18 @@
 package jvc.predicate.engine.evaluator;
 
 import jvc.predicate.engine.SymbolTable;
-import jvc.predicate.engine.types.PLType;
-import jvc.predicate.engine.types.PLTypeFactory;
-import jvc.predicate.engine.types.impl.PLBoolean;
-import jvc.predicate.engine.types.impl.PLCollection;
+import jvc.predicate.engine.type.PLUtil;
 
 import java.util.Collection;
 import java.util.List;
 
-public abstract class MultiEvaluator extends Evaluator<PLBoolean> {
+public abstract class MultiEvaluator extends Evaluator<Boolean> {
 
     private List<String> variablesName;
     private List<String> setsName;
     private SymbolTable symbolTable;
     private int variablesLg;
-    private Evaluator<PLType<?>> evaluator;
+    private Evaluator<?> evaluator;
 
     public MultiEvaluator(List<String> variablesName, List<String> setsName, SymbolTable symbolTable) {
 
@@ -24,19 +21,19 @@ public abstract class MultiEvaluator extends Evaluator<PLBoolean> {
         this.symbolTable = symbolTable;
     }
 
-    protected abstract boolean isSuccess(EvaluatorResult<PLType<?>> evaluator);
+    protected abstract boolean isSuccess(EvaluatorResult<?> evaluator);
 
-    protected abstract boolean isFailure(EvaluatorResult<PLType<?>> evaluator);
+    protected abstract boolean isFailure(EvaluatorResult<?> evaluator);
 
     protected abstract boolean afterAll();
 
-    public void setEvaluator(Evaluator<PLType<?>> evaluator) {
+    public void setEvaluator(Evaluator<?> evaluator) {
 
         this.evaluator = evaluator;
     }
 
     @Override
-    protected EvaluatorResult<PLBoolean> run() {
+    protected EvaluatorResult<Boolean> run() {
 
         if (variablesName == null || setsName == null || symbolTable == null) {
             return new EvaluatorResult<>("Faltan datos requeridos");
@@ -54,68 +51,65 @@ public abstract class MultiEvaluator extends Evaluator<PLBoolean> {
             return new EvaluatorResult<>("Existen variables con el mismo nombre.");
         }
 
-        boolean setDefined = setsName.stream().allMatch(x -> symbolTable.getVariable(x).is(PLType.COLLECTION));
+        boolean setDefined = setsName.stream().allMatch(x -> PLUtil.isCollection(symbolTable.getVariable(x)));
 
         if (!setDefined) {
             return new EvaluatorResult<>("Una de las variables no es un conjunto.");
         }
 
-        return runner(0);
+        EvaluatorResult<Boolean> runner = runner(0);
+
+        for (String var : variablesName) {
+            symbolTable.removeVariable(var);
+        }
+
+        return runner;
     }
 
-    private EvaluatorResult<PLBoolean> runner(int idx) {
+    private EvaluatorResult<Boolean> runner(int idx) {
 
-        PLType<?> value;
-        EvaluatorResult<PLType<?>> evaluatorResult;
+        EvaluatorResult<?> evaluatorResult;
 
         String variableKey = variablesName.get(idx);
         String setKey = setsName.get(idx);
 
-        PLCollection<?> plCollection = symbolTable.getVariable(setKey).toCollection();
+        Collection<?> collection = PLUtil.asCollection(symbolTable.getVariable(setKey));
+
+        if (collection == null)
+            return new EvaluatorResult<>("Sin datos para procesar");
 
         int nextIdx = idx + 1;
 
-        Collection<?> collection = plCollection.getData();
         if (idx < variablesLg) {
 
-            for (Object datum : collection) {
-                value = PLTypeFactory.test(datum);
-
-                if (value == null) {
-                    return new EvaluatorResult<>("Error interno, valor nulo.");
-                }
+            for (Object value : collection) {
 
                 symbolTable.forceAddVariable(variableKey, value);
-                EvaluatorResult<PLBoolean> result = runner(nextIdx);
+                EvaluatorResult<Boolean> result = runner(nextIdx);
 
-                if (!result.getData().getData()) {
+                if (!result.getData()) {
                     return result;
                 }
             }
 
-            return new EvaluatorResult<>(PLTypeFactory.add(true));
+            return new EvaluatorResult<>(true);
 
         } else if (idx == variablesLg) {
 
-            for (Object datum : collection) {
-                value = PLTypeFactory.test(datum);
-
-                if (value == null) {
-                    return new EvaluatorResult<>("Error interno, valor nulo.");
-                }
+            for (Object value : collection) {
 
                 symbolTable.forceAddVariable(variableKey, value);
 
                 evaluatorResult = evaluator.eval();
 
                 if (isSuccess(evaluatorResult)) {
-                    return new EvaluatorResult<>(PLTypeFactory.add(true));
+                    return new EvaluatorResult<>(true);
                 } else if (isFailure(evaluatorResult)) {
-                    return new EvaluatorResult<>(PLTypeFactory.add(false));
+                    return new EvaluatorResult<>(false);
                 }
             }
 
-            return new EvaluatorResult<>(PLTypeFactory.add(afterAll()));
+            return new EvaluatorResult<>(afterAll());
         }
 
         return new EvaluatorResult<>("Error al ejecutar MultaEvaluator.");

@@ -9,7 +9,7 @@ import org.junit.Assert;
 
 import java.io.StringReader;
 
-public class PLUtil {
+public class PLTestUtil {
 
     public static PredicateLogic run(String code, PredicateLogic predicateLogic) {
 
@@ -36,10 +36,16 @@ public class PLUtil {
 
     public static void test(Object expected, String code, PredicateLogic predicateLogic) {
 
-        PredicateLogic run = PLUtil.run(code, predicateLogic);
+        PredicateLogic run = PLTestUtil.run(code, predicateLogic);
+
+        assert run != null;
+
+        if (run.isFailure()) {
+            System.out.println(run.getErrorTrace());
+        }
 
         Assert.assertNotNull(run);
-        Assert.assertTrue(run.isSuccesfull());
+        Assert.assertTrue(run.isSuccess());
         Assert.assertEquals(expected, run.getResult());
     }
 
@@ -49,6 +55,11 @@ public class PLUtil {
         predicateLogic.setSymbolTable(symbolTable);
 
         test(expected, code, predicateLogic);
+    }
+
+    public static void test(Object expected, PredicateLogic predicateLogic, String code) {
+
+        test(expected, predicateLogic.getSymbolTable(), code);
     }
 
 }

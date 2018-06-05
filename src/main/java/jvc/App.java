@@ -14,7 +14,10 @@ public class App {
     static final String SOURCE = "forall {a:A} 5 == 5";
 
     public static void main(String[] args) {
-        try {
+
+        System.out.println(Integer.class.getSimpleName());
+
+        /*try {
             ComplexSymbolFactory symbolFactory = new ComplexSymbolFactory();
 
             AnalizadorLexico analizadorLexico = new AnalizadorLexico(new StringReader(SOURCE), symbolFactory);
@@ -24,6 +27,6 @@ public class App {
             p.parse();
         } catch (Exception e) {
             e.printStackTrace();
-        }
+        }*/
     }
 }

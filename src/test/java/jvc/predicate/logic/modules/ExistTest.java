@@ -1,9 +1,8 @@
 package jvc.predicate.logic.modules;
 
 import jvc.predicate.engine.SymbolTable;
-import jvc.predicate.engine.types.PLTypeFactory;
-import jvc.predicate.logic.utils.PLUtil;
-import org.junit.Ignore;
+import jvc.predicate.engine.type.PLTypeFactory;
+import jvc.predicate.logic.utils.PLTestUtil;
 import org.junit.Test;
 
 public class ExistTest {
@@ -14,7 +13,7 @@ public class ExistTest {
         SymbolTable symbolTable = new SymbolTable();
         symbolTable.addVariable("A", PLTypeFactory.add(10, 11, 12));
 
-        PLUtil.test(true, symbolTable, "exist {a:A} a == 12");
+        PLTestUtil.test(true, symbolTable, "exist {a:A} a == 12");
 
     }
 
@@ -24,8 +23,7 @@ public class ExistTest {
         SymbolTable symbolTable = new SymbolTable();
         symbolTable.addVariable("A", PLTypeFactory.add(10, 11, 12));
 
-        PLUtil.test(false, symbolTable, "exist {a:A}  a == 7 ");
-
+        PLTestUtil.test(false, symbolTable, "exist {a:A}  a == 7 ");
     }
 
     @Test
@@ -35,7 +33,7 @@ public class ExistTest {
         symbolTable.addVariable("A", PLTypeFactory.add(10, 11, 12));
         symbolTable.addVariable("B", PLTypeFactory.add(1, 2, 3));
 
-        PLUtil.test(true, symbolTable, "exist { a, b: A, B}  a > b  ");
+        PLTestUtil.test(true, symbolTable, "exist { a, b: A, B}  a > b  ");
 
     }
 

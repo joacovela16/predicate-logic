@@ -1,32 +1,34 @@
 package jvc.predicate.logic.modules;
 
 import jvc.predicate.engine.SymbolTable;
-import jvc.predicate.engine.types.PLTypeFactory;
-import jvc.predicate.logic.utils.PLUtil;
+import jvc.predicate.engine.type.PLTypeFactory;
+import jvc.predicate.logic.utils.PLTestUtil;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class ForallTest {
 
+    //@Ignore
     @Test
     public void test1() {
 
         SymbolTable symbolTable = new SymbolTable();
         symbolTable.addVariable("A", PLTypeFactory.add(10, 11, 12));
 
-        PLUtil.test(true, symbolTable, "forall {a:A} a >= 10");
-
+        PLTestUtil.test(true, symbolTable, "forall {a:A} a >= 10");
     }
 
+    //@Ignore
     @Test
     public void test2() {
 
         SymbolTable symbolTable = new SymbolTable();
         symbolTable.addVariable("A", PLTypeFactory.add(10, 11, 12));
 
-        PLUtil.test(true, symbolTable, "forall {a:A}  a - 6 > 3  ");
-
+        PLTestUtil.test(true, symbolTable, "forall {a:A}  a - 6 > 3  ");
     }
 
+    //@Ignore
     @Test
     public void test3() {
 
@@ -34,10 +36,10 @@ public class ForallTest {
         symbolTable.addVariable("A", PLTypeFactory.add(10, 11, 12));
         symbolTable.addVariable("B", PLTypeFactory.add(1, 2, 3));
 
-        PLUtil.test(true, symbolTable, "forall {a, b:A, B}  a > b  ");
-
+        PLTestUtil.test(true, symbolTable, "forall {a, b:A, B}  a > b  ");
     }
 
+    //@Ignore
     @Test
     public void test4() {
 
@@ -45,10 +47,10 @@ public class ForallTest {
         symbolTable.addVariable("A", PLTypeFactory.add(10, 11, 12));
         symbolTable.addVariable("B", PLTypeFactory.add(1, 2, 3));
 
-        PLUtil.test(true, symbolTable, "forall {a, b:A, B}  b - a < 0  and b >= 1 ");
-
+        PLTestUtil.test(true, symbolTable, "forall {a, b:A, B}  b - a < 0  and b >= 1 ");
     }
 
+    //@Ignore
     @Test
     public void test5() {
 
@@ -56,17 +58,25 @@ public class ForallTest {
         symbolTable.addVariable("A", PLTypeFactory.add(10, 11, 12));
         symbolTable.addVariable("B", PLTypeFactory.add(1, 2, 3));
 
-        PLUtil.test(false, symbolTable, "forall {a, b:A, B}    a < 0 and b < 0   ");
-
+        PLTestUtil.test(false, symbolTable, "forall {a, b:A, B}    a < 0 and b < 0   ");
     }
 
+    //@Ignore
     @Test
     public void test6() {
 
         SymbolTable symbolTable = new SymbolTable();
         symbolTable.addVariable("A", PLTypeFactory.add());
 
-        PLUtil.test(true, symbolTable, "forall {a:A}    a < 0 ");
+        PLTestUtil.test(true, symbolTable, "forall {a:A}    a < 0 ");
+    }
 
+    @Test
+    public void test7() {
+
+        SymbolTable symbolTable = new SymbolTable();
+        symbolTable.addVariable("A", PLTypeFactory.add(2, 4, 6, 7, 8, 10));
+
+        PLTestUtil.test(true, symbolTable, "forall {a:A}  (a % 2 == 0 or (exist {b:A} b / 7 == 1 ) ) ");
     }
 }

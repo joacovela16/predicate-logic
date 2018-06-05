@@ -1,101 +1,33 @@
 package jvc.predicate.engine.evaluator.impl.arithmetic;
 
 import jvc.predicate.engine.evaluator.BinaryEvaluator;
-import jvc.predicate.engine.evaluator.Evaluator;
 import jvc.predicate.engine.evaluator.EvaluatorResult;
-import jvc.predicate.engine.types.PLType;
-import jvc.predicate.engine.types.impl.PLAtomic;
-import jvc.predicate.engine.types.impl.PLFloat;
-import jvc.predicate.engine.types.impl.PLInt;
+import jvc.predicate.engine.type.PLOperator;
+import jvc.predicate.engine.type.PLUtil;
 
-public class ModEvaluator<L extends PLAtomic<?>, R extends PLAtomic<?>> extends BinaryEvaluator<L, R, PLAtomic<?>> {
+public class ModEvaluator<L, R> extends BinaryEvaluator<L, R, Number> {
 
     public ModEvaluator() {
 
-    }
+        PLOperator<EvaluatorResult<Number>> operator = getOperator();
 
-    public ModEvaluator(Evaluator<L> left, Evaluator<R> right) {
+        operator.setNr2Nr((a, b) -> {
 
-        super(left, right);
-    }
+            if (b.floatValue() == 0f) {
+                return new EvaluatorResult<>("Operación no permitida.");
+            }
 
-    @Override
-    public EvaluatorResult<PLAtomic<?>> run() {
+            if (PLUtil.is(a, Float.class) || PLUtil.is(b, Float.class)) {
+                float v = a.floatValue();
+                float v1 = b.floatValue();
+                return new EvaluatorResult<>(v % v1);
+            } else {
+                int i = a.intValue();
+                int i1 = b.intValue();
+                return new EvaluatorResult<>(i % i1);
+            }
 
-        EvaluatorResult<L> leftResult = getLeft();
-        EvaluatorResult<R> rightResult = getRight();
+        });
 
-        L left = leftResult.getData();
-        R right = rightResult.getData();
-
-        PLAtomic<?> result;
-
-        switch (left.getType()) {
-
-            case PLType.BOOLEAN:
-            case PLType.INT:
-
-                Integer leftInt = left.is(PLType.BOOLEAN) ? (left.toBool().getData() ? 1 : 0) : left.toInt().getData();
-
-                switch (right.getType()) {
-                    case PLType.BOOLEAN:
-
-                        result = new PLInt(leftInt % (right.toBool().getData() ? 1 : 0));
-
-                        break;
-                    case PLType.INT:
-
-                        result = new PLInt(leftInt % right.toInt().getData());
-
-                        break;
-
-                    case PLType.FLOAT:
-
-                        result = new PLFloat(leftInt % right.toFloat().getData());
-
-                        break;
-
-                    default: // string
-
-                        return new EvaluatorResult<>("Operación no soportada");
-                }
-
-                break;
-
-            case PLType.FLOAT:
-
-                Float leftFloat = left.toFloat().getData();
-
-                switch (right.getType()) {
-                    case PLType.BOOLEAN:
-
-                        result = new PLFloat(leftFloat % (right.toBool().getData() ? 1 : 0));
-
-                        break;
-                    case PLType.INT:
-
-                        result = new PLFloat(leftFloat % right.toInt().getData());
-
-                        break;
-
-                    case PLType.FLOAT:
-
-                        result = new PLFloat(leftFloat % right.toFloat().getData());
-
-                        break;
-
-                    default: // string
-
-                        return new EvaluatorResult<>("Operación no soportada");
-                }
-
-                break;
-
-            default: // string
-
-                return new EvaluatorResult<>("Operación no soportada");
-        }
-
-        return new EvaluatorResult<>(result);
     }
 }

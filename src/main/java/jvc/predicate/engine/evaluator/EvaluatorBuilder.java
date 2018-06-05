@@ -1,20 +1,72 @@
 package jvc.predicate.engine.evaluator;
 
+import com.sun.org.apache.xpath.internal.Arg;
+import java_cup.runtime.ComplexSymbolFactory;
 import jvc.predicate.engine.PredicateLogic;
 import jvc.predicate.engine.evaluator.impl.arithmetic.*;
 import jvc.predicate.engine.evaluator.impl.comparation.*;
+import jvc.predicate.engine.evaluator.impl.conditional.BiConditionalOperator;
+import jvc.predicate.engine.evaluator.impl.conditional.ConditionalOperator;
 import jvc.predicate.engine.evaluator.impl.logic.AndEvaluator;
 import jvc.predicate.engine.evaluator.impl.logic.NotEvaluator;
 import jvc.predicate.engine.evaluator.impl.logic.OrEvaluator;
-import jvc.predicate.engine.evaluator.impl.runtime.ExistEvaluator;
-import jvc.predicate.engine.evaluator.impl.runtime.ForallEvaluator;
-import jvc.predicate.engine.evaluator.impl.runtime.TypeEvaluator;
-import jvc.predicate.engine.evaluator.impl.runtime.VariableEvaluator;
-import jvc.predicate.engine.types.PLType;
+import jvc.predicate.engine.evaluator.impl.quantifier.ExistEvaluator;
+import jvc.predicate.engine.evaluator.impl.quantifier.ForallEvaluator;
+import jvc.predicate.engine.evaluator.impl.runtime.*;
 
 import java.util.List;
 
 public class EvaluatorBuilder {
+
+    public static Evaluator keepOne(Evaluator a, Evaluator b) {
+
+        return a == null ? b : a;
+    }
+
+    public static void addError(String msg, Object o, PredicateLogic predicateLogic) {
+
+        if (o instanceof ComplexSymbolFactory.ComplexSymbol) {
+            ComplexSymbolFactory.ComplexSymbol complexSymbol = (ComplexSymbolFactory.ComplexSymbol) o;
+
+            int column = complexSymbol.getLeft().getColumn();
+            int line = complexSymbol.getLeft().getLine();
+            predicateLogic.addErrorTrace(String.format("%s linea %s, columna %s", msg, line, column));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Evaluator maybeFunction(Evaluator e1, Evaluator e2) {
+
+        if (e1 == null || e2 == null) {
+            return keepOne(e1, e2);
+        } else if (e1 instanceof VariableEvaluator && e2 instanceof ArgumentEvaluator) {
+            return new FunctionEvaluator((VariableEvaluator) e1, (ArgumentEvaluator) e2);
+        }
+
+        return new FailureEvaluator("Problemas al evaluar");
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Evaluator evalConditional(Evaluator a, Evaluator b) {
+
+        ConditionalOperator conditionalOperator = new ConditionalOperator();
+
+        conditionalOperator.setLeft(a);
+        conditionalOperator.setRight(b);
+
+        return conditionalOperator;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Evaluator evalBiConditional(Evaluator a, Evaluator b) {
+
+        BiConditionalOperator biConditionalOperator = new BiConditionalOperator();
+
+        biConditionalOperator.setLeft(a);
+        biConditionalOperator.setRight(b);
+
+        return biConditionalOperator;
+    }
 
     @SuppressWarnings("unchecked")
     public static Evaluator evalForall(List<String> variablesName, List<String> setName, Evaluator e, PredicateLogic predicateLogic) {
@@ -34,9 +86,9 @@ public class EvaluatorBuilder {
         return existEvaluator;
     }
 
-    public static Evaluator eval(String key, PredicateLogic predicateLogic) {
+    public static <T> Evaluator eval(String key, PredicateLogic predicateLogic) {
 
-        return new VariableEvaluator(key, predicateLogic.getSymbolTable());
+        return new VariableEvaluator<>(key, predicateLogic.getSymbolTable());
     }
 
     @SuppressWarnings("unchecked")
@@ -58,9 +110,9 @@ public class EvaluatorBuilder {
         return bin;
     }
 
-    public static TypeEvaluator eval(PLType a) {
+    public static <T> TypeEvaluator eval(T a) {
 
-        return new TypeEvaluator(a);
+        return new TypeEvaluator<>(a);
     }
 
     public static BinaryEvaluator andEval() {

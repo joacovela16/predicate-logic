@@ -3,9 +3,9 @@ package jvc.predicate.engine.evaluator.impl.runtime;
 import jvc.predicate.engine.SymbolTable;
 import jvc.predicate.engine.evaluator.Evaluator;
 import jvc.predicate.engine.evaluator.EvaluatorResult;
-import jvc.predicate.engine.types.PLType;
+import jvc.predicate.engine.type.PLUtil;
 
-public class VariableEvaluator extends Evaluator<PLType<?>> {
+public class VariableEvaluator<T> extends Evaluator<T> {
 
     private String variableName;
     private SymbolTable symbolTable;
@@ -13,26 +13,35 @@ public class VariableEvaluator extends Evaluator<PLType<?>> {
     public VariableEvaluator(String variableName, SymbolTable symbolTable) {
 
         this.variableName = variableName;
-
         this.symbolTable = symbolTable;
     }
 
+    public String getVariableName() {
+
+        return variableName;
+    }
+
+    public SymbolTable getSymbolTable() {
+
+        return symbolTable;
+    }
+
     @Override
-    protected EvaluatorResult<PLType<?>> run() {
+    @SuppressWarnings("unchecked")
+    protected EvaluatorResult<T> run() {
 
         if (symbolTable == null || variableName == null) {
             return new EvaluatorResult<>("Faltan datos");
         }
 
-        PLType<?> variable = symbolTable.getVariable(variableName);
+        Object variable = symbolTable.getVariable(variableName);
 
-        if (variable == null) {
+        if (variable == null || !PLUtil.isValidType(variable)) {
             return new EvaluatorResult<>("No existe variable " + variableName);
         }
 
-        TypeEvaluator typeEvaluator = new TypeEvaluator(variable);
+        TypeEvaluator<T> typeEvaluator = new TypeEvaluator<>((T) variable);
 
         return typeEvaluator.eval();
     }
-
 }

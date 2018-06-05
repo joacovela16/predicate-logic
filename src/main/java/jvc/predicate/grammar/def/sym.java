@@ -8,38 +8,40 @@ package jvc.predicate.grammar.def;
 /** CUP generated interface containing symbol constants. */
 public interface sym {
   /* terminals */
-  public static final int PLUS_OP = 11;
-  public static final int SETNAME = 31;
-  public static final int GT_OP = 17;
+  public static final int PLUS_OP = 13;
+  public static final int SETNAME = 33;
+  public static final int GT_OP = 19;
   public static final int FLOAT_NUMBER = 3;
-  public static final int AND = 8;
-  public static final int PUNTO = 22;
+  public static final int AND = 10;
+  public static final int PUNTO = 24;
   public static final int FORALL = 6;
-  public static final int OR = 9;
-  public static final int LT_OP = 16;
-  public static final int MINUS_OP = 12;
-  public static final int NOT = 10;
-  public static final int IDENTIFIER = 29;
-  public static final int DIV_OP = 14;
+  public static final int LT_OP = 18;
+  public static final int OR = 11;
+  public static final int MINUS_OP = 14;
+  public static final int NOT = 12;
+  public static final int IDENTIFIER = 31;
+  public static final int DIV_OP = 16;
   public static final int INT_NUMBER = 2;
-  public static final int AP_CURVO = 24;
-  public static final int RELATION = 30;
-  public static final int C_LLAVES = 27;
-  public static final int DOS_PUNTOS = 23;
+  public static final int AP_CURVO = 26;
+  public static final int RELATION = 32;
+  public static final int C_LLAVES = 29;
+  public static final int DOS_PUNTOS = 25;
+  public static final int IF_THEN = 8;
   public static final int BOOLEAN = 4;
-  public static final int COMA = 28;
+  public static final int COMA = 30;
   public static final int STRING = 5;
   public static final int EXIST = 7;
   public static final int EOF = 0;
-  public static final int EQUAL_OP = 20;
+  public static final int EQUAL_OP = 22;
   public static final int error = 1;
-  public static final int NOT_EQUAL_OP = 21;
-  public static final int GE_OP = 19;
-  public static final int A_LLAVES = 26;
-  public static final int CP_CURVO = 25;
-  public static final int MOD_OP = 15;
-  public static final int LE_OP = 18;
-  public static final int TIME_OP = 13;
+  public static final int NOT_EQUAL_OP = 23;
+  public static final int GE_OP = 21;
+  public static final int A_LLAVES = 28;
+  public static final int CP_CURVO = 27;
+  public static final int IF_ONLY_IF = 9;
+  public static final int MOD_OP = 17;
+  public static final int LE_OP = 20;
+  public static final int TIME_OP = 15;
   public static final String[] terminalNames = new String[] {
   "EOF",
   "error",
@@ -49,6 +51,8 @@ public interface sym {
   "STRING",
   "FORALL",
   "EXIST",
+  "IF_THEN",
+  "IF_ONLY_IF",
   "AND",
   "OR",
   "NOT",

@@ -1,6 +1,5 @@
 package jvc.predicate.engine;
 
-import jvc.predicate.engine.types.PLType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,14 +10,14 @@ public class SymbolTable {
 
     private static final Logger logger = LoggerFactory.getLogger(SymbolTable.class);
 
-    private Map<String, PLType<?>> variables;
+    private Map<String, Object> variables;
 
     public SymbolTable() {
 
         variables = new HashMap<>();
     }
 
-    public void addVariable(String name, PLType<?> value) {
+    public void addVariable(String name, Object value) {
 
         if (variables.containsKey(name)) {
             logger.warn(String.format("Existe variable %s ", name));
@@ -29,12 +28,31 @@ public class SymbolTable {
         }
     }
 
-    public void forceAddVariable(String name, PLType<?> value){
+    public void removeVariable(String name) {
+
+        variables.remove(name);
+    }
+
+    public void forceAddVariable(String name, Object value) {
+
         variables.put(name, value);
     }
 
-    public PLType<?> getVariable(String name) {
+    public Object getVariable(String name) {
 
         return variables.getOrDefault(name, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T getVariable(String name, Class<T> tClass) {
+
+        if (tClass != null && variables.containsKey(name)) {
+            Object o = variables.get(name);
+            if (o.getClass().isInstance(tClass)) {
+                return (T) o;
+            }
+        }
+
+        return null;
     }
 }

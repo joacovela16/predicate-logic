@@ -14,7 +14,7 @@ public class AppLexPrinter {
         try {
             ComplexSymbolFactory symbolFactory = new ComplexSymbolFactory();
 
-            String src = "forall {a:A} 5 == 5";
+            String src = " forall {a: A} lessThan(5, a)";
 
             AnalizadorLexico analizadorLexico = new AnalizadorLexico(new StringReader(src), symbolFactory);
 

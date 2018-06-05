@@ -1,9 +1,9 @@
-package jvc.predicate.engine.evaluator.impl.runtime;
+package jvc.predicate.engine.evaluator.impl.quantifier;
 
 import jvc.predicate.engine.SymbolTable;
 import jvc.predicate.engine.evaluator.EvaluatorResult;
 import jvc.predicate.engine.evaluator.MultiEvaluator;
-import jvc.predicate.engine.types.PLType;
+import jvc.predicate.engine.type.PLUtil;
 
 import java.util.List;
 
@@ -15,18 +15,23 @@ public class ForallEvaluator extends MultiEvaluator {
     }
 
     @Override
-    protected boolean isSuccess(EvaluatorResult<PLType<?>> evaluator) {
+    protected boolean isSuccess(EvaluatorResult<?> evaluator) {
+
         return false;
     }
 
     @Override
-    protected boolean isFailure(EvaluatorResult<PLType<?>> evaluator) {
+    @SuppressWarnings("unchecked")
+    protected boolean isFailure(EvaluatorResult<?> evaluator) {
 
-        PLType<?> data = evaluator.getData();
-        boolean aBoolean = data.is(PLType.BOOLEAN);
+        Object data = evaluator.getData();
+        boolean aBoolean = PLUtil.is(data, Boolean.class);
 
-        if (aBoolean){
-            return !data.toBool().getData();
+        if (aBoolean) {
+
+            Boolean booleanData = PLUtil.asBool(data);
+
+            return !booleanData;
         }
 
         return false;

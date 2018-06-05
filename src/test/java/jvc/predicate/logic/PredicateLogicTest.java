@@ -12,8 +12,12 @@ import org.junit.runners.Suite;
         VariableTest.class,
         ForallTest.class,
         ExistTest.class,
+        ConditionalTest.class,
         ParenthesesTest.class
 })
 public class PredicateLogicTest {
 
 }
+
+
+

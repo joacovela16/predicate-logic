@@ -1,8 +1,8 @@
 package jvc.predicate.logic.modules;
 
 import jvc.predicate.engine.SymbolTable;
-import jvc.predicate.engine.types.PLTypeFactory;
-import jvc.predicate.logic.utils.PLUtil;
+import jvc.predicate.engine.type.PLTypeFactory;
+import jvc.predicate.logic.utils.PLTestUtil;
 import org.junit.Test;
 
 public class VariableTest {
@@ -11,9 +11,9 @@ public class VariableTest {
     public void test1() {
 
         SymbolTable symbolTable = new SymbolTable();
-        symbolTable.addVariable("n", PLTypeFactory.add(5));
+        symbolTable.addVariable("n", 5);
 
-        PLUtil.test(true, symbolTable, "n == 5");
+        PLTestUtil.test(true, symbolTable, "n == 5");
 
     }
 
@@ -21,10 +21,10 @@ public class VariableTest {
     public void test2() {
 
         SymbolTable symbolTable = new SymbolTable();
-        symbolTable.addVariable("n", PLTypeFactory.add(5));
-        symbolTable.addVariable("p", PLTypeFactory.add(7));
+        symbolTable.addVariable("n", 5);
+        symbolTable.addVariable("p", 7);
 
-        PLUtil.test(true, symbolTable, "n + 2 == p ");
+        PLTestUtil.test(true, symbolTable, "n + 2 == p ");
 
     }
 
@@ -32,11 +32,11 @@ public class VariableTest {
     public void test3() {
 
         SymbolTable symbolTable = new SymbolTable();
-        symbolTable.addVariable("n", PLTypeFactory.add(5));
-        symbolTable.addVariable("p", PLTypeFactory.add(7));
-        symbolTable.addVariable("m", PLTypeFactory.add(8));
+        symbolTable.addVariable("n", 5);
+        symbolTable.addVariable("p", 7);
+        symbolTable.addVariable("m", 8);
 
-        PLUtil.test(true, symbolTable, "n + 10 == p + m ");
+        PLTestUtil.test(true, symbolTable, "n + 10 == p + m ");
 
     }
 }

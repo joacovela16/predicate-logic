@@ -4,7 +4,7 @@ package jvc.predicate.grammar.def;
 import java_cup.runtime.Symbol;
 import java_cup.runtime.ComplexSymbolFactory;
 import java_cup.runtime.ComplexSymbolFactory.Location;
-import jvc.predicate.engine.types.impl.*;
+
 %%
 /* <jflex options>  */
 %class AnalizadorLexico
@@ -62,7 +62,7 @@ _Mayusculas= [A-Z]
 _Minusculas=[a-z]
 _Letra =  ({_Minusculas} | {_Mayusculas} )
 _Relation = {_Mayusculas}({_Mayusculas})*
-_Identifier = {_Minusculas}({_Minusculas}|{_Digito})*
+_Identifier = {_Minusculas}({_Minusculas}|{_Mayusculas}|{_Digito})*
 _ComillaSimple=  \"([^\\\"]|\\.)*\"
 _SetName = ({_Mayusculas}+{_Minusculas}*)+
 _Espacio_en_Blanco = \s
@@ -73,7 +73,7 @@ _Espacio_en_Blanco = \s
 
 // PALABRAS RESERVADAS
 <YYINITIAL> {  
-                ("true" | "false") { return symbol(yytext(), sym.BOOLEAN, new PLBoolean(yytext())); }
+                ("true" | "false") { return symbol(yytext(), sym.BOOLEAN, Boolean.valueOf(yytext())); }
                 "forall"    { return symbol("forall", sym.FORALL, null); }
                 "exist"    { return symbol("exist", sym.EXIST, null); }
 }
@@ -87,12 +87,12 @@ _Espacio_en_Blanco = \s
 
 <YYINITIAL> {
                 "\n" {}
+                { _Identifier} { return symbol(yytext(), sym.IDENTIFIER, yytext()); }
                 {_SetName} { return symbol( String.format("set(%s)", yytext()) , sym.SETNAME, yytext()); }
                 { _Relation} { return symbol(yytext(), sym.RELATION, yytext()); }
-                { _Identifier} { return symbol(yytext(), sym.IDENTIFIER, yytext()); }
-                {_ComillaSimple} { return symbol("int", sym.STRING, new PLString(yytext())); }
-                { _Int} { return symbol("int", sym.INT_NUMBER, new PLInt(Integer.valueOf(yytext()))); }
-                {_Float} {return symbol("float", sym.FLOAT_NUMBER, new PLFloat(Float.valueOf(yytext())));}
+                {_ComillaSimple} { return symbol("int", sym.STRING, yytext()); }
+                { _Int} { return symbol("int", sym.INT_NUMBER, Integer.valueOf(yytext())); }
+                {_Float} {return symbol("float", sym.FLOAT_NUMBER, Float.valueOf(yytext()));}
                 {_Espacio_en_Blanco} {}
 }
 
@@ -116,6 +116,12 @@ _Espacio_en_Blanco = \s
                 "%"     { return symbol("mod", sym.MOD_OP, null); }
 }
 
+<YYINITIAL> {
+
+            "->"  {return symbol("->", sym.IF_THEN, null); }
+            "<->" {return symbol("->", sym.IF_ONLY_IF, null); }
+}
+
 
 // OPERADORES RELACIONALES
 <YYINITIAL> {   
@@ -130,4 +136,3 @@ _Espacio_en_Blanco = \s
 
 /* errores */
 <YYINITIAL>[$ | ?] { }
-

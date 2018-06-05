@@ -2,16 +2,16 @@ package jvc.predicate.engine.evaluator.impl.runtime;
 
 import jvc.predicate.engine.evaluator.AtomicEvaluator;
 import jvc.predicate.engine.evaluator.EvaluatorResult;
-import jvc.predicate.engine.types.PLType;
 
-public class TypeEvaluator extends AtomicEvaluator<PLType<?>> {
+public class TypeEvaluator<T> extends AtomicEvaluator<T> {
 
-    public TypeEvaluator(PLType<?> data) {
+    public TypeEvaluator(T data) {
+
         super(data);
     }
 
     @Override
-    public EvaluatorResult<PLType<?>> run() {
+    public EvaluatorResult<T> run() {
         return new EvaluatorResult<>(getData());
     }
 }

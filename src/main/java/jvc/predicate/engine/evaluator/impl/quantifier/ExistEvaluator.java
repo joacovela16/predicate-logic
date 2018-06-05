@@ -1,10 +1,9 @@
-package jvc.predicate.engine.evaluator.impl.runtime;
+package jvc.predicate.engine.evaluator.impl.quantifier;
 
 import jvc.predicate.engine.SymbolTable;
 import jvc.predicate.engine.evaluator.EvaluatorResult;
 import jvc.predicate.engine.evaluator.MultiEvaluator;
-import jvc.predicate.engine.types.PLType;
-import jvc.predicate.engine.types.impl.PLBoolean;
+import jvc.predicate.engine.type.PLUtil;
 
 import java.util.List;
 
@@ -15,22 +14,22 @@ public class ExistEvaluator extends MultiEvaluator {
         super(variablesName, setsName, symbolTable);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    protected boolean isSuccess(EvaluatorResult<PLType<?>> evaluator) {
+    protected boolean isSuccess(EvaluatorResult<?> evaluator) {
 
-        PLType<?> data = evaluator.getData();
-        boolean aBoolean = data.is(PLType.BOOLEAN);
+        Object data = evaluator.getData();
+        boolean aBoolean = PLUtil.is(data, Boolean.class);
 
         if (aBoolean) {
-            PLBoolean plBoolean = data.toBool();
-            return plBoolean.getData();
+            return PLUtil.asBool(data);
         }
 
         return false;
     }
 
     @Override
-    protected boolean isFailure(EvaluatorResult<PLType<?>> evaluator) {
+    protected boolean isFailure(EvaluatorResult<?> evaluator) {
 
         return false;
     }
