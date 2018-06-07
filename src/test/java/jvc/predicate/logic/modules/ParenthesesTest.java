@@ -7,9 +7,7 @@ public class ParenthesesTest {
 
     @Test
     public void test1() {
-
         PLTestUtil.test(27, "  (2 * 6)+3 + (4+2+1) + 5 ");
-
     }
 
 }

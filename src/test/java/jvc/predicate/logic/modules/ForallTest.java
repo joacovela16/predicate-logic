@@ -3,7 +3,6 @@ package jvc.predicate.logic.modules;
 import jvc.predicate.engine.SymbolTable;
 import jvc.predicate.engine.type.PLTypeFactory;
 import jvc.predicate.logic.utils.PLTestUtil;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class ForallTest {
