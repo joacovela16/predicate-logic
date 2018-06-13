@@ -7,7 +7,6 @@ import org.junit.Test;
 
 public class ForallTest {
 
-    //@Ignore
     @Test
     public void test1() {
 
@@ -17,7 +16,6 @@ public class ForallTest {
         PLTestUtil.test(true, symbolTable, "forall {a:A} a >= 10");
     }
 
-    //@Ignore
     @Test
     public void test2() {
 
@@ -27,7 +25,6 @@ public class ForallTest {
         PLTestUtil.test(true, symbolTable, "forall {a:A}  a - 6 > 3  ");
     }
 
-    //@Ignore
     @Test
     public void test3() {
 
@@ -38,7 +35,6 @@ public class ForallTest {
         PLTestUtil.test(true, symbolTable, "forall {a, b:A, B}  a > b  ");
     }
 
-    //@Ignore
     @Test
     public void test4() {
 
@@ -49,7 +45,6 @@ public class ForallTest {
         PLTestUtil.test(true, symbolTable, "forall {a, b:A, B}  b - a < 0  and b >= 1 ");
     }
 
-    //@Ignore
     @Test
     public void test5() {
 
@@ -60,7 +55,6 @@ public class ForallTest {
         PLTestUtil.test(false, symbolTable, "forall {a, b:A, B}    a < 0 and b < 0   ");
     }
 
-    //@Ignore
     @Test
     public void test6() {
 
