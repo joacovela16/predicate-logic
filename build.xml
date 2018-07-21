@@ -1,0 +1,29 @@
+<project name="Compiler" default="compile" basedir=".">
+    <property name="cup" location="src/main/java/jvc/predicate/grammar/def"/>
+    <property name="dir" location="src/main/java/jvc/predicate/grammar/def"/>
+    <property name="output" location="src/main/java"/>
+    <property name="classes" location="bin"/>
+    <property name="lib" location="lib"/>
+    <property name="tools" location="tools"/>
+
+    <taskdef name="jflex" classname="jflex.anttask.JFlexTask" classpath="${tools}/jflex-1.6.1.jar"/>
+    <taskdef name="cup" classname="java_cup.anttask.CUPTask" classpath="${tools}/java-cup-11b.jar"/>
+
+    <target name="generate" depends="clean">
+        <jflex file="${dir}/JFlex.jflex" destdir="${output}"/>
+        <cup srcfile="${dir}/Parser.cup" destdir="${output}" interface="true" locations="true"/>
+    </target>
+
+    <path id="libraries">
+        <files includes="${tools}/java-cup-11b-runtime.jar"/>
+    </path>
+
+    <target name="compile" depends="generate">
+
+    </target>
+    <target name="clean">
+        <delete file="${dir}/AnalizadorLexico.java"/>
+        <delete file="${dir}/sym.java"/>
+        <delete file="${dir}/Parser.java"/>
+    </target>
+</project>

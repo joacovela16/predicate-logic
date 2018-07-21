@@ -1,0 +1,232 @@
+package jvc.predicate.grammar.def;
+import java_cup.runtime.*;
+import jvc.predicate.engine.evaluator.impl.arithmetic.*;
+import jvc.predicate.engine.evaluator.impl.comparation.*;
+import jvc.predicate.engine.evaluator.impl.logic.*;
+import jvc.predicate.engine.evaluator.impl.runtime.*;
+import jvc.predicate.engine.evaluator.*;
+import jvc.predicate.engine.*;
+
+parser code
+{:
+
+    private PredicateLogic predicateLogic;
+
+    public parser(java_cup.runtime.Scanner s, java_cup.runtime.SymbolFactory sf, PredicateLogic pl) {
+        super(s,sf);
+        this.predicateLogic = pl;
+    }
+
+    public PredicateLogic getPredicateLogic(){return predicateLogic;}
+
+
+    public void report_error(String s, Object o){
+        EvaluatorBuilder.addError(s, o, predicateLogic);
+    }
+
+    public void report_fatal_error(String s, Object o){
+        report_error(s, o);
+    }
+
+    protected void report_expected_token_ids(){
+
+    }
+
+:}
+
+non terminal BinaryEvaluator  relational_op,
+                              equality_op,
+                              additive_op;
+
+non terminal Evaluator primary_expression,
+                       expression,
+                       main,
+                       forall_expression,
+                       exists_expression,
+                       logical_not_expression,
+                       additive_expression,
+                       logical_or_expression,
+                       logical_and_expression,
+                       relational_expression,
+                       multiplicative_expression,
+                       equality_expression,
+                       postfix_expression,
+                       if_only_if_expression,
+                       if_then_expression;
+
+non terminal java.util.ArrayList<String> parameter_set, parameter;
+
+terminal Integer INT_NUMBER;
+terminal Float FLOAT_NUMBER;
+terminal Boolean BOOLEAN;
+terminal String STRING;
+
+terminal FORALL, EXIST;
+terminal IF_THEN, IF_ONLY_IF;
+terminal AND, OR, NOT, PLUS_OP, MINUS_OP, TIME_OP, DIV_OP, MOD_OP;
+terminal LT_OP, GT_OP, LE_OP, GE_OP, EQUAL_OP, NOT_EQUAL_OP;
+terminal PUNTO, DOS_PUNTOS, AP_CURVO, CP_CURVO, A_LLAVES, C_LLAVES, COMA;
+terminal String IDENTIFIER, RELATION, SETNAME;
+start with main;
+
+main ::=
+    expression:e
+    {:
+        if (e!=null) predicateLogic.setEvaluatorResult(e.eval());
+    :};
+
+expression ::=
+    forall_expression:loe
+    {:
+        RESULT = loe;
+    :} |
+    expression:a COMA forall_expression:b
+    {:
+        ArgumentEvaluator ae;
+
+        if (a instanceof ArgumentEvaluator){
+            ae = (ArgumentEvaluator)a;
+            ae.add(b);
+
+        }else{
+            ae = new ArgumentEvaluator();
+            ae.add(a);
+            ae.add(b);
+        }
+
+        RESULT = ae;
+    :};
+
+
+forall_expression ::=
+    exists_expression:ee {: RESULT = ee; :} |
+    FORALL  A_LLAVES  parameter:p DOS_PUNTOS parameter_set:ps C_LLAVES forall_expression:fe
+    {:
+        RESULT = EvaluatorBuilder.evalForall(p, ps, fe, predicateLogic);
+    :};
+
+exists_expression ::=
+    if_only_if_expression:lae {: RESULT = lae; :} |
+    EXIST  A_LLAVES  parameter:p DOS_PUNTOS parameter_set:ps C_LLAVES exists_expression:ex 
+    {:
+        RESULT = EvaluatorBuilder.evalExist(p, ps, ex, predicateLogic);
+    :};
+
+if_only_if_expression ::=
+    if_then_expression:a {: RESULT = a; :} |
+    if_only_if_expression:a IF_ONLY_IF if_then_expression:b
+    {:
+        RESULT = EvaluatorBuilder.evalBiConditional(a, b);
+    :};
+
+if_then_expression ::=
+    logical_not_expression:a {: RESULT = a; :} |
+    if_then_expression:a IF_THEN logical_not_expression:b
+    {:
+        RESULT = EvaluatorBuilder.evalConditional(a, b);
+    :};
+
+
+logical_not_expression ::=
+    logical_or_expression:loe {: RESULT = loe; :} |
+    NOT logical_not_expression:lne {: RESULT  = EvaluatorBuilder.eval( EvaluatorBuilder.notEval(), lne ); :};
+
+logical_or_expression ::=
+    logical_and_expression:lae {: RESULT = lae; :} |
+    logical_or_expression:loe OR:op logical_and_expression:lae
+    {:
+        RESULT = EvaluatorBuilder.eval( loe, EvaluatorBuilder.orEval(), lae );
+    :};
+
+logical_and_expression ::=
+    equality_expression:ioe {: RESULT = ioe; :}|
+    logical_and_expression:lae AND:op equality_expression:ioe
+    {:
+        RESULT = EvaluatorBuilder.eval( lae, EvaluatorBuilder.andEval(), ioe );
+    :};
+
+equality_expression ::=
+    relational_expression:re {: RESULT = re; :} |
+    equality_expression:ee equality_op:op relational_expression:re
+    {:
+        RESULT = EvaluatorBuilder.eval(ee, op, re);
+    :} ;
+
+equality_op ::=
+    EQUAL_OP {: RESULT = EvaluatorBuilder.equalEval(); :} |
+    NOT_EQUAL_OP {: RESULT = EvaluatorBuilder.notEqualEval(); :};
+
+relational_expression ::=
+    additive_expression:ae {: RESULT = ae; :}|
+    relational_expression:re relational_op:op additive_expression:se
+    {:
+        RESULT = EvaluatorBuilder.eval(re, op, se);
+    :};
+
+relational_op ::=
+    LT_OP {:  RESULT =  EvaluatorBuilder.ltEval(); :} |
+    GT_OP {:  RESULT =  EvaluatorBuilder.gtEval(); :} |
+    LE_OP {:  RESULT =  EvaluatorBuilder.leEval(); :} |
+    GE_OP {:  RESULT =  EvaluatorBuilder.geEval(); :};
+
+additive_expression ::=
+    multiplicative_expression:me {: RESULT = me; :}|
+    additive_expression:ae additive_op:op multiplicative_expression:me
+    {:
+        RESULT  = EvaluatorBuilder.eval(ae, op, me);
+    :};
+
+additive_op ::=
+    PLUS_OP {: RESULT = EvaluatorBuilder.plusEval(); :} |
+    DIV_OP {: RESULT = EvaluatorBuilder.divEval(); :} |
+    MOD_OP {: RESULT = EvaluatorBuilder.modEval(); :} |
+    MINUS_OP {: RESULT = EvaluatorBuilder.minusEval(); :};
+
+multiplicative_expression ::=
+    postfix_expression:pe {: RESULT = pe; :} |
+    multiplicative_expression:me TIME_OP postfix_expression:ce
+    {:
+        RESULT  = EvaluatorBuilder.eval(me, EvaluatorBuilder.timeEval() , ce);
+    :};
+
+postfix_expression ::=
+
+    primary_expression:pe {:  RESULT = pe; :} |
+    postfix_expression:a AP_CURVO CP_CURVO {:  RESULT = a; :} |
+    AP_CURVO expression:e  CP_CURVO {: RESULT = e; :} |
+    postfix_expression:pe AP_CURVO expression:e CP_CURVO
+    {:
+        RESULT = EvaluatorBuilder.maybeFunction( pe, e);
+    :};
+
+primary_expression ::=
+      IDENTIFIER:id
+      {:
+        RESULT = EvaluatorBuilder.eval(id, predicateLogic);
+      :}
+    | INT_NUMBER:c {: RESULT = EvaluatorBuilder.eval(c); :}
+    | FLOAT_NUMBER:c {: RESULT = EvaluatorBuilder.eval(c); :}
+    | BOOLEAN:c {: RESULT = EvaluatorBuilder.eval(c); :}
+    | STRING:c {: RESULT = EvaluatorBuilder.eval(c); :};
+
+parameter ::=
+    IDENTIFIER:sn
+    {:
+        RESULT = new java.util.ArrayList<String>(){{add(sn);}};
+    :}|
+    parameter:ps COMA IDENTIFIER:sn
+    {:
+        ps.add(sn);
+        RESULT = ps;
+    :};
+
+parameter_set ::=
+    SETNAME:sn
+    {:
+        RESULT = new java.util.ArrayList<String>(){{add(sn);}};
+    :}|
+    parameter_set:ps COMA SETNAME:sn
+    {:
+        ps.add(sn);
+        RESULT = ps;
+    :};
